@@ -288,14 +288,14 @@ bool save_scene(const string& filename, const yocto_scene& scene, string& error,
 
 bool load_scene(
     const string& filename, yocto_scene& scene, const load_params& params) {
-auto err = ""s;
-return load_scene(filename, scene, err, params);
-    }
+  auto err = ""s;
+  return load_scene(filename, scene, err, params);
+}
 bool save_scene(const string& filename, const yocto_scene& scene,
     const save_params& params) {
-auto err = ""s;
-return save_scene(filename, scene, err, params);
-    }
+  auto err = ""s;
+  return save_scene(filename, scene, err, params);
+}
 
 // Return the preset type and the remaining filename
 static inline bool is_preset_filename(const string& filename) {
@@ -679,9 +679,15 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
   if (!fs) return set_sceneio_error(error, filename, false, "file not found");
 
   // errors
-  auto set_parse_error = [&]() { return set_sceneio_error(error, filename, false, "parse error"); };
-  auto set_property_error = [&]() { return set_sceneio_error(error, filename, false, "unknown property"); };
-  auto set_type_error = [&]() { return set_sceneio_error(error, filename, false, "type mismatch"); };
+  auto set_parse_error = [&]() {
+    return set_sceneio_error(error, filename, false, "parse error");
+  };
+  auto set_property_error = [&]() {
+    return set_sceneio_error(error, filename, false, "unknown property");
+  };
+  auto set_type_error = [&]() {
+    return set_sceneio_error(error, filename, false, "type mismatch");
+  };
 
   // parse state
   enum struct parsing_type {
@@ -716,9 +722,8 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
   auto value  = yaml_value{};
   auto yerror = false;
   while (read_yaml_property(fs, group, key, newobj, value, yerror)) {
-    if(yerror) return set_parse_error();
-    if (group.empty())
-      return set_parse_error();
+    if (yerror) return set_parse_error();
+    if (group.empty()) return set_parse_error();
     if (key.empty()) {
       type = parsing_type::none;
       continue;
@@ -750,7 +755,8 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
         scene.environments.push_back({});
       } else {
         type = parsing_type::none;
-        return set_sceneio_error(error, filename, false, "unknown object type " + string(group));
+        return set_sceneio_error(
+            error, filename, false, "unknown object type " + string(group));
       }
     }
     if (type == parsing_type::none) {
@@ -758,22 +764,23 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
     } else if (type == parsing_type::camera) {
       auto& camera = scene.cameras.back();
       if (key == "uri") {
-        if(!get_yaml_value(value, camera.uri)) return set_type_error();
+        if (!get_yaml_value(value, camera.uri)) return set_type_error();
       } else if (key == "frame") {
-        if(!get_yaml_value(value, camera.frame)) return set_type_error();
+        if (!get_yaml_value(value, camera.frame)) return set_type_error();
       } else if (key == "orthographic") {
-        if(!get_yaml_value(value, camera.orthographic)) return set_type_error();
+        if (!get_yaml_value(value, camera.orthographic))
+          return set_type_error();
       } else if (key == "lens") {
-        if(!get_yaml_value(value, camera.lens)) return set_type_error();
+        if (!get_yaml_value(value, camera.lens)) return set_type_error();
       } else if (key == "film") {
-        if(!get_yaml_value(value, camera.film)) return set_type_error();
+        if (!get_yaml_value(value, camera.film)) return set_type_error();
       } else if (key == "focus") {
-        if(!get_yaml_value(value, camera.focus)) return set_type_error();
+        if (!get_yaml_value(value, camera.focus)) return set_type_error();
       } else if (key == "aperture") {
-        if(!get_yaml_value(value, camera.aperture)) return set_type_error();
+        if (!get_yaml_value(value, camera.aperture)) return set_type_error();
       } else if (key == "lookat") {
         auto lookat = identity3x3f;
-        if(!get_yaml_value(value, lookat)) return set_type_error();
+        if (!get_yaml_value(value, lookat)) return set_type_error();
         camera.frame = lookat_frame(lookat.x, lookat.y, lookat.z);
         camera.focus = length(lookat.x - lookat.y);
       } else {
@@ -782,21 +789,21 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
     } else if (type == parsing_type::texture) {
       auto& texture = scene.textures.back();
       if (key == "uri") {
-        if(!get_yaml_value(value, texture.uri)) return set_type_error();
+        if (!get_yaml_value(value, texture.uri)) return set_type_error();
         auto refname = texture.uri;
         if (is_preset_filename(refname)) {
           refname = get_preset_type(refname).second;
         }
         tmap[refname] = (int)scene.textures.size() - 1;
       } else if (key == "filename") {
-        if(!get_yaml_value(value, texture.uri)) return set_type_error();
+        if (!get_yaml_value(value, texture.uri)) return set_type_error();
       } else {
         return set_property_error();
       }
     } else if (type == parsing_type::voltexture) {
       auto& texture = scene.voltextures.back();
       if (key == "uri") {
-        if(!get_yaml_value(value, texture.uri)) return set_type_error();
+        if (!get_yaml_value(value, texture.uri)) return set_type_error();
         auto refname = texture.uri;
         if (is_preset_filename(refname)) {
           refname = get_preset_type(refname).second;
@@ -808,40 +815,46 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
     } else if (type == parsing_type::material) {
       auto& material = scene.materials.back();
       if (key == "uri") {
-        if(!get_yaml_value(value, material.uri)) return set_type_error();
+        if (!get_yaml_value(value, material.uri)) return set_type_error();
         mmap[material.uri] = (int)scene.materials.size() - 1;
       } else if (key == "emission") {
-        if(!get_yaml_value(value, material.emission)) return set_type_error();
+        if (!get_yaml_value(value, material.emission)) return set_type_error();
       } else if (key == "diffuse") {
-        if(!get_yaml_value(value, material.diffuse)) return set_type_error();
+        if (!get_yaml_value(value, material.diffuse)) return set_type_error();
       } else if (key == "metallic") {
-        if(!get_yaml_value(value, material.metallic)) return set_type_error();
+        if (!get_yaml_value(value, material.metallic)) return set_type_error();
       } else if (key == "specular") {
-        if(!get_yaml_value(value, material.specular)) return set_type_error();
+        if (!get_yaml_value(value, material.specular)) return set_type_error();
       } else if (key == "roughness") {
-        if(!get_yaml_value(value, material.roughness)) return set_type_error();
+        if (!get_yaml_value(value, material.roughness)) return set_type_error();
       } else if (key == "coat") {
-        if(!get_yaml_value(value, material.coat)) return set_type_error();
+        if (!get_yaml_value(value, material.coat)) return set_type_error();
       } else if (key == "transmission") {
-        if(!get_yaml_value(value, material.transmission)) return set_type_error();
+        if (!get_yaml_value(value, material.transmission))
+          return set_type_error();
       } else if (key == "refract") {
-        if(!get_yaml_value(value, material.refract)) return set_type_error();
+        if (!get_yaml_value(value, material.refract)) return set_type_error();
       } else if (key == "voltransmission") {
-        if(!get_yaml_value(value, material.voltransmission)) return set_type_error();
+        if (!get_yaml_value(value, material.voltransmission))
+          return set_type_error();
       } else if (key == "volmeanfreepath") {
-        if(!get_yaml_value(value, material.volmeanfreepath)) return set_type_error();
+        if (!get_yaml_value(value, material.volmeanfreepath))
+          return set_type_error();
       } else if (key == "volscatter") {
-        if(!get_yaml_value(value, material.volscatter)) return set_type_error();
+        if (!get_yaml_value(value, material.volscatter))
+          return set_type_error();
       } else if (key == "volemission") {
-        if(!get_yaml_value(value, material.volemission)) return set_type_error();
+        if (!get_yaml_value(value, material.volemission))
+          return set_type_error();
       } else if (key == "volanisotropy") {
-        if(!get_yaml_value(value, material.volanisotropy)) return set_type_error();
+        if (!get_yaml_value(value, material.volanisotropy))
+          return set_type_error();
       } else if (key == "volscale") {
-        if(!get_yaml_value(value, material.volscale)) return set_type_error();
+        if (!get_yaml_value(value, material.volscale)) return set_type_error();
       } else if (key == "opacity") {
-        if(!get_yaml_value(value, material.opacity)) return set_type_error();
+        if (!get_yaml_value(value, material.opacity)) return set_type_error();
       } else if (key == "coat") {
-        if(!get_yaml_value(value, material.coat)) return set_type_error();
+        if (!get_yaml_value(value, material.coat)) return set_type_error();
       } else if (key == "emission_tex") {
         get_yaml_ref(value, material.emission_tex, tmap);
       } else if (key == "diffuse_tex") {
@@ -863,14 +876,15 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
       } else if (key == "voldensity_tex") {
         get_yaml_ref(value, material.voldensity_tex, vmap);
       } else if (key == "gltf_textures") {
-        if(!get_yaml_value(value, material.gltf_textures)) return set_type_error();
+        if (!get_yaml_value(value, material.gltf_textures))
+          return set_type_error();
       } else {
         return set_property_error();
       }
     } else if (type == parsing_type::shape) {
       auto& shape = scene.shapes.back();
       if (key == "uri") {
-        if(!get_yaml_value(value, shape.uri)) return set_type_error();
+        if (!get_yaml_value(value, shape.uri)) return set_type_error();
         auto refname = shape.uri;
         if (is_preset_filename(refname)) {
           refname = get_preset_type(refname).second;
@@ -882,37 +896,40 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
     } else if (type == parsing_type::subdiv) {
       auto& subdiv = scene.subdivs.back();
       if (key == "uri") {
-        if(!get_yaml_value(value, subdiv.uri)) return set_type_error();
+        if (!get_yaml_value(value, subdiv.uri)) return set_type_error();
       } else if (key == "shape") {
         get_yaml_ref(value, subdiv.shape, smap);
       } else if (key == "subdivisions") {
-        if(!get_yaml_value(value, subdiv.subdivisions)) return set_type_error();
+        if (!get_yaml_value(value, subdiv.subdivisions))
+          return set_type_error();
       } else if (key == "catmullclark") {
-        if(!get_yaml_value(value, subdiv.catmullclark)) return set_type_error();
+        if (!get_yaml_value(value, subdiv.catmullclark))
+          return set_type_error();
       } else if (key == "smooth") {
-        if(!get_yaml_value(value, subdiv.smooth)) return set_type_error();
+        if (!get_yaml_value(value, subdiv.smooth)) return set_type_error();
       } else if (key == "facevarying") {
-        if(!get_yaml_value(value, subdiv.facevarying)) return set_type_error();
+        if (!get_yaml_value(value, subdiv.facevarying)) return set_type_error();
       } else if (key == "displacement_tex") {
         get_yaml_ref(value, subdiv.displacement_tex, tmap);
       } else if (key == "displacement") {
-        if(!get_yaml_value(value, subdiv.displacement)) return set_type_error();
+        if (!get_yaml_value(value, subdiv.displacement))
+          return set_type_error();
       } else {
         return set_property_error();
       }
     } else if (type == parsing_type::instance) {
       auto& instance = scene.instances.back();
       if (key == "uri") {
-        if(!get_yaml_value(value, instance.uri)) return set_type_error();
+        if (!get_yaml_value(value, instance.uri)) return set_type_error();
       } else if (key == "frame") {
-        if(!get_yaml_value(value, instance.frame)) return set_type_error();
+        if (!get_yaml_value(value, instance.frame)) return set_type_error();
       } else if (key == "shape") {
         get_yaml_ref(value, instance.shape, smap);
       } else if (key == "material") {
         get_yaml_ref(value, instance.material, mmap);
       } else if (key == "lookat") {
         auto lookat = identity3x3f;
-        if(!get_yaml_value(value, lookat)) return set_type_error();
+        if (!get_yaml_value(value, lookat)) return set_type_error();
         instance.frame = lookat_frame(lookat.x, lookat.y, lookat.z, true);
       } else {
         return set_property_error();
@@ -920,16 +937,17 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
     } else if (type == parsing_type::environment) {
       auto& environment = scene.environments.back();
       if (key == "uri") {
-        if(!get_yaml_value(value, environment.uri)) return set_type_error();
+        if (!get_yaml_value(value, environment.uri)) return set_type_error();
       } else if (key == "frame") {
-        if(!get_yaml_value(value, environment.frame)) return set_type_error();
+        if (!get_yaml_value(value, environment.frame)) return set_type_error();
       } else if (key == "emission") {
-        if(!get_yaml_value(value, environment.emission)) return set_type_error();
+        if (!get_yaml_value(value, environment.emission))
+          return set_type_error();
       } else if (key == "emission_tex") {
         get_yaml_ref(value, environment.emission_tex, tmap);
       } else if (key == "lookat") {
         auto lookat = identity3x3f;
-        if(!get_yaml_value(value, lookat)) return set_type_error();
+        if (!get_yaml_value(value, lookat)) return set_type_error();
         environment.frame = lookat_frame(lookat.x, lookat.y, lookat.z, true);
       } else {
         return set_property_error();
@@ -939,7 +957,7 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
     }
   }
 
-  if(yerror) return set_parse_error();
+  if (yerror) return set_parse_error();
 
   return true;
 }
@@ -1511,8 +1529,12 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
 static bool load_obj(const string& filename, yocto_scene& scene, string& error,
     const load_params& params) {
   // errors
-  auto set_parse_error = [&]() { return set_sceneio_error(error, filename, false, "parse error"); };
-  auto set_type_error = [&]() { return set_sceneio_error(error, filename, false, "type mismatch"); };
+  auto set_parse_error = [&]() {
+    return set_sceneio_error(error, filename, false, "parse error");
+  };
+  auto set_type_error = [&]() {
+    return set_sceneio_error(error, filename, false, "type mismatch");
+  };
 
   // current parsing values
   string mname = ""s;
@@ -1545,7 +1567,8 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
   bool facevarying_now = false;
 
   // Add  vertices to the current shape
-  auto add_verts = [&](const vector<obj_vertex>& verts, yocto_shape& shape, string& error)  -> bool{
+  auto add_verts = [&](const vector<obj_vertex>& verts, yocto_shape& shape,
+                       string& error) -> bool {
     for (auto& vert : verts) {
       auto it = vertex_map.find(vert);
       if (it != vertex_map.end()) continue;
@@ -1571,7 +1594,8 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
   };
 
   // add vertex
-  auto add_fvverts = [&](const vector<obj_vertex>& verts, yocto_shape& shape, string& error) -> bool {
+  auto add_fvverts = [&](const vector<obj_vertex>& verts, yocto_shape& shape,
+                         string& error) -> bool {
     for (auto& vert : verts) {
       if (!vert.position) continue;
       auto pos_it = pos_map.find(vert.position);
@@ -1600,16 +1624,18 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
   };
 
   // add object if needed
-  auto add_shape = [&](string& error)  -> bool {
+  auto add_shape = [&](string& error) -> bool {
     auto shape      = yocto_shape{};
     shape.uri       = oname + gname;
     facevarying_now = params.facevarying ||
                       shape.uri.find("[yocto::facevarying]") != string::npos;
     scene.shapes.push_back(shape);
-    auto instance     = yocto_instance{};
-    instance.uri      = shape.uri;
-    instance.shape    = (int)scene.shapes.size() - 1;
-    if(mmap.find(mname) == mmap.end()) return set_sceneio_error(error, filename, false, "missing material " + mname);
+    auto instance  = yocto_instance{};
+    instance.uri   = shape.uri;
+    instance.shape = (int)scene.shapes.size() - 1;
+    if (mmap.find(mname) == mmap.end())
+      return set_sceneio_error(
+          error, filename, false, "missing material " + mname);
     instance.material = mmap.at(mname);
     scene.instances.push_back(instance);
     object_shapes[oname].push_back((int)scene.shapes.size() - 1);
@@ -1633,22 +1659,24 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
     if (command == obj_command::error) {
       return set_parse_error();
     } else if (command == obj_command::vertex) {
-      if(!get_obj_value(value, opos.emplace_back()))return set_type_error();
+      if (!get_obj_value(value, opos.emplace_back())) return set_type_error();
     } else if (command == obj_command::normal) {
-      if(!get_obj_value(value, onorm.emplace_back()))return set_type_error();
+      if (!get_obj_value(value, onorm.emplace_back())) return set_type_error();
     } else if (command == obj_command::texcoord) {
-      if(!get_obj_value(value, otexcoord.emplace_back()))return set_type_error();
+      if (!get_obj_value(value, otexcoord.emplace_back()))
+        return set_type_error();
       otexcoord.back().y = 1 - otexcoord.back().y;
     } else if (command == obj_command::face) {
-      if (scene.shapes.empty()) if(!add_shape(error)) return false;
+      if (scene.shapes.empty())
+        if (!add_shape(error)) return false;
       if (!scene.shapes.back().positions.empty() &&
           (!scene.shapes.back().lines.empty() ||
               !scene.shapes.back().points.empty())) {
-        if(!add_shape(error)) return false;
+        if (!add_shape(error)) return false;
       }
       auto& shape = scene.shapes.back();
       if (!facevarying_now) {
-        if(!add_verts(vertices, shape, error)) return false;
+        if (!add_verts(vertices, shape, error)) return false;
         if (vertices.size() == 4) {
           shape.quads.push_back(
               {vertex_map.at(vertices[0]), vertex_map.at(vertices[1]),
@@ -1659,7 +1687,7 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
                 vertex_map.at(vertices[i - 1]), vertex_map.at(vertices[i])});
         }
       } else {
-        if(!add_fvverts(vertices, shape, error)) return false;
+        if (!add_fvverts(vertices, shape, error)) return false;
         if (vertices.size() == 4) {
           if (vertices[0].position) {
             shape.quadspos.push_back({pos_map.at(vertices[0].position),
@@ -1706,40 +1734,42 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
         }
       }
     } else if (command == obj_command::line) {
-      if (scene.shapes.empty()) if(!add_shape(error)) return false;
+      if (scene.shapes.empty())
+        if (!add_shape(error)) return false;
       if (!scene.shapes.back().positions.empty() &&
           scene.shapes.back().lines.empty()) {
-        if(!add_shape(error)) return false;
+        if (!add_shape(error)) return false;
       }
       auto& shape = scene.shapes.back();
-      if(!add_verts(vertices, shape, error)) return false;
+      if (!add_verts(vertices, shape, error)) return false;
       for (auto i = 1; i < vertices.size(); i++)
         shape.lines.push_back(
             {vertex_map.at(vertices[i - 1]), vertex_map.at(vertices[i])});
     } else if (command == obj_command::point) {
-      if (scene.shapes.empty()) if(!add_shape(error)) return false;
+      if (scene.shapes.empty())
+        if (!add_shape(error)) return false;
       if (!scene.shapes.back().positions.empty() &&
           scene.shapes.back().points.empty()) {
-        if(!add_shape(error)) return false;
+        if (!add_shape(error)) return false;
       }
       auto& shape = scene.shapes.back();
-      if(!add_verts(vertices, shape, error)) return false;
+      if (!add_verts(vertices, shape, error)) return false;
       for (auto i = 0; i < vertices.size(); i++)
         shape.points.push_back(vertex_map.at(vertices[i]));
     } else if (command == obj_command::object) {
-      if(!get_obj_value(value, oname))return set_type_error();
+      if (!get_obj_value(value, oname)) return set_type_error();
       gname = "";
       mname = "";
-      if(!add_shape(error)) return false;
+      if (!add_shape(error)) return false;
     } else if (command == obj_command::group) {
-      if(!get_obj_value(value, gname))return set_type_error();
-      if(!add_shape(error)) return false;
+      if (!get_obj_value(value, gname)) return set_type_error();
+      if (!add_shape(error)) return false;
     } else if (command == obj_command::usemtl) {
-      if(!get_obj_value(value, mname))return set_type_error();
-      if(!add_shape(error)) return false;
+      if (!get_obj_value(value, mname)) return set_type_error();
+      if (!add_shape(error)) return false;
     } else if (command == obj_command::mtllib) {
       auto name = ""s;
-      if(!get_obj_value(value, name))return set_type_error();
+      if (!get_obj_value(value, name)) return set_type_error();
       if (std::find(mlibs.begin(), mlibs.end(), name) != mlibs.end()) continue;
       mlibs.push_back(name);
       auto mtlpath = fs::path(filename).parent_path() / name;
@@ -1778,7 +1808,9 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
 
   // check if any empty shape is left
   for (auto& shape : scene.shapes) {
-    if (shape.positions.empty()) return set_sceneio_error(error, filename, false, "missing vertex positions");
+    if (shape.positions.empty())
+      return set_sceneio_error(
+          error, filename, false, "missing vertex positions");
   }
 
   // merging quads and triangles

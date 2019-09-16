@@ -660,7 +660,7 @@ static inline bool parse_obj_value(string_view& str, string_view& value) {
 }
 static inline bool parse_obj_value(string_view& str, string& value) {
   auto valuev = ""sv;
-  if(!parse_obj_value(str, valuev)) return false;
+  if (!parse_obj_value(str, valuev)) return false;
   value = string{valuev};
   return true;
 }
@@ -680,7 +680,8 @@ static inline bool parse_obj_value(string_view& str, float& value) {
 }
 template <typename T>
 static inline bool parse_obj_value(string_view& str, T* values, int num) {
-  for (auto i = 0; i < num; i++) if(!parse_obj_value(str, values[i]))return false;
+  for (auto i = 0; i < num; i++)
+    if (!parse_obj_value(str, values[i])) return false;
   return true;
 }
 
@@ -707,17 +708,17 @@ static inline bool parse_obj_value_or_empty(string_view& str, T& value) {
 
 static inline bool parse_obj_value(string_view& str, obj_vertex& value) {
   value = obj_vertex{0, 0, 0};
-  if(!parse_obj_value(str, value.position)) return false;
+  if (!parse_obj_value(str, value.position)) return false;
   if (!str.empty() && str.front() == '/') {
     str.remove_prefix(1);
     if (!str.empty() && str.front() == '/') {
       str.remove_prefix(1);
-      if(!parse_obj_value(str, value.normal)) return false;
+      if (!parse_obj_value(str, value.normal)) return false;
     } else {
-      if(!parse_obj_value(str, value.texcoord)) return false;
+      if (!parse_obj_value(str, value.texcoord)) return false;
       if (!str.empty() && str.front() == '/') {
         str.remove_prefix(1);
-        if(!parse_obj_value(str, value.normal)) return false;
+        if (!parse_obj_value(str, value.normal)) return false;
       }
     }
   }
@@ -734,7 +735,7 @@ static inline bool parse_obj_value(string_view& str, obj_texture_info& info) {
   skip_whitespace(str);
   while (!str.empty()) {
     auto token = ""s;
-    if(!parse_obj_value(str, token)) return false;
+    if (!parse_obj_value(str, token)) return false;
     tokens.push_back(token);
     skip_whitespace(str);
   }
@@ -753,44 +754,44 @@ static inline bool parse_obj_value(string_view& str, obj_texture_info& info) {
   return true;
 }
 
-static inline bool parse_obj_value(string_view& str, obj_value& value, obj_value_type type,
-    int array_size = 3) {
+static inline bool parse_obj_value(string_view& str, obj_value& value,
+    obj_value_type type, int array_size = 3) {
   switch (type) {
     case obj_value_type::number: {
       auto value_ = 0.0f;
-      if(!parse_obj_value(str, value_)) return false;
+      if (!parse_obj_value(str, value_)) return false;
       value = make_obj_value(value_);
       return true;
     } break;
     case obj_value_type::string: {
       auto value_ = ""s;
-      if(!parse_obj_value(str, value_)) return false;
+      if (!parse_obj_value(str, value_)) return false;
       value = make_obj_value(value_);
       return true;
     } break;
     case obj_value_type::array: {
       if (array_size == 2) {
         auto value_ = zero2f;
-        if(!parse_obj_value(str, value_)) return false;
+        if (!parse_obj_value(str, value_)) return false;
         value = make_obj_value(value_);
-      return true;
+        return true;
       } else if (array_size == 3) {
         auto value_ = zero3f;
-        if(!parse_obj_value(str, value_)) return false;
+        if (!parse_obj_value(str, value_)) return false;
         value = make_obj_value(value_);
-      return true;
+        return true;
       } else if (array_size == 12) {
         auto value_ = identity3x4f;
-        if(!parse_obj_value(str, value_)) return false;
+        if (!parse_obj_value(str, value_)) return false;
         value = make_obj_value(value_);
-      return true;
+        return true;
       } else {
         throw std::runtime_error("should not have gotten here");
       }
     } break;
     case obj_value_type::boolean: {
       auto value_ = 0;
-      if(!parse_obj_value(str, value_)) return false;
+      if (!parse_obj_value(str, value_)) return false;
       value = make_obj_value((bool)value_);
       return true;
     } break;
@@ -812,7 +813,10 @@ static inline bool parse_obj_value_or_empty(
 bool read_obj_command(file_wrapper& fs, obj_command& command, obj_value& value,
     vector<obj_vertex>& vertices, obj_vertex& vert_size) {
   // set error
-  auto set_error = [&command]() { command = obj_command::error; return true; };
+  auto set_error = [&command]() {
+    command = obj_command::error;
+    return true;
+  };
   // read the file line by line
   char buffer[4096];
   while (read_line(fs, buffer, sizeof(buffer))) {
@@ -824,23 +828,26 @@ bool read_obj_command(file_wrapper& fs, obj_command& command, obj_value& value,
 
     // get command
     auto cmd = ""s;
-    if(!parse_obj_value(line, cmd)) return set_error();
+    if (!parse_obj_value(line, cmd)) return set_error();
     if (cmd == "") continue;
 
     // possible token values
     if (cmd == "v") {
       command = obj_command::vertex;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
       vert_size.position += 1;
       return true;
     } else if (cmd == "vn") {
       command = obj_command::normal;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
       vert_size.normal += 1;
       return true;
     } else if (cmd == "vt") {
       command = obj_command::texcoord;
-      if(!parse_obj_value(line, value, obj_value_type::array, 2)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array, 2))
+        return set_error();
       vert_size.texcoord += 1;
       return true;
     } else if (cmd == "f" || cmd == "l" || cmd == "p") {
@@ -848,7 +855,7 @@ bool read_obj_command(file_wrapper& fs, obj_command& command, obj_value& value,
       skip_whitespace(line);
       while (!line.empty()) {
         auto vert = obj_vertex{};
-        if(!parse_obj_value(line, vert)) return set_error();
+        if (!parse_obj_value(line, vert)) return set_error();
         if (!vert.position) break;
         if (vert.position < 0)
           vert.position = vert_size.position + vert.position + 1;
@@ -864,23 +871,24 @@ bool read_obj_command(file_wrapper& fs, obj_command& command, obj_value& value,
       return true;
     } else if (cmd == "o") {
       command = obj_command::object;
-      if(!parse_obj_value_or_empty(line, value)) return set_error();
+      if (!parse_obj_value_or_empty(line, value)) return set_error();
       return true;
     } else if (cmd == "usemtl") {
       command = obj_command::usemtl;
-      if(!parse_obj_value_or_empty(line, value)) return set_error();
+      if (!parse_obj_value_or_empty(line, value)) return set_error();
       return true;
     } else if (cmd == "g") {
       command = obj_command::group;
-      if(!parse_obj_value_or_empty(line, value)) return set_error();
+      if (!parse_obj_value_or_empty(line, value)) return set_error();
       return true;
     } else if (cmd == "s") {
       command = obj_command::smoothing;
-      if(!parse_obj_value_or_empty(line, value)) return set_error();
+      if (!parse_obj_value_or_empty(line, value)) return set_error();
       return true;
     } else if (cmd == "mtllib") {
       command = obj_command::mtllib;
-      if(!parse_obj_value(line, value, obj_value_type::string)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::string))
+        return set_error();
       return true;
     } else {
       // unused
@@ -893,7 +901,10 @@ bool read_obj_command(file_wrapper& fs, obj_command& command, obj_value& value,
 bool read_mtl_command(file_wrapper& fs, mtl_command& command, obj_value& value,
     obj_texture_info& texture, bool fliptr) {
   // set error
-  auto set_error = [&command]() { command = mtl_command::error; return true; };
+  auto set_error = [&command]() {
+    command = mtl_command::error;
+    return true;
+  };
   // read the file line by line
   char buffer[4096];
   while (read_line(fs, buffer, sizeof(buffer))) {
@@ -905,122 +916,143 @@ bool read_mtl_command(file_wrapper& fs, mtl_command& command, obj_value& value,
 
     // get command
     auto cmd = ""s;
-    if(!parse_obj_value(line, cmd)) return set_error();
+    if (!parse_obj_value(line, cmd)) return set_error();
     if (cmd == "") continue;
 
     // possible token values
     if (cmd == "newmtl") {
       command = mtl_command::material;
-      if(!parse_obj_value(line, value, obj_value_type::string)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::string))
+        return set_error();
     } else if (cmd == "illum") {
       command = mtl_command::illum;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
     } else if (cmd == "Ke") {
       command = mtl_command::emission;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
     } else if (cmd == "Kd") {
       command = mtl_command::diffuse;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
     } else if (cmd == "Ks") {
       command = mtl_command::specular;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
     } else if (cmd == "Kt") {
       command = mtl_command::transmission;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
     } else if (cmd == "Tf") {
       command    = mtl_command::transmission;
       auto color = vec3f{-1};
       value      = make_obj_value(color);
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
       get_obj_value(value, color);
       if (color.y < 0) color = vec3f{color.x};
       if (fliptr) color = 1 - color;
       value = make_obj_value(color);
     } else if (cmd == "Tr") {
       command = mtl_command::opacity;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
       if (fliptr) value.number = 1 - value.number;
     } else if (cmd == "Ns") {
       command = mtl_command::exponent;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
     } else if (cmd == "d") {
       command = mtl_command::opacity;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
     } else if (cmd == "map_Ke") {
       command = mtl_command::emission_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_Kd") {
       command = mtl_command::diffuse_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_Ks") {
       command = mtl_command::specular_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_Tr") {
       command = mtl_command::transmission_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_d" || cmd == "map_Tr") {
       command = mtl_command::opacity_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_bump" || cmd == "bump") {
       command = mtl_command::bump_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_disp" || cmd == "disp") {
       command = mtl_command::displacement_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_norm" || cmd == "norm") {
       command = mtl_command::normal_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "Pm") {
       command = mtl_command::pbr_metallic;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
     } else if (cmd == "Pr") {
       command = mtl_command::pbr_roughness;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
     } else if (cmd == "Ps") {
       command = mtl_command::pbr_sheen;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
     } else if (cmd == "Pc") {
       command = mtl_command::pbr_clearcoat;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
     } else if (cmd == "Pcr") {
       command = mtl_command::pbr_coatroughness;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
     } else if (cmd == "map_Pm") {
       command = mtl_command::pbr_metallic_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_Pr") {
       command = mtl_command::pbr_roughness_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_Ps") {
       command = mtl_command::pbr_sheen_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_Pc") {
       command = mtl_command::pbr_clearcoat_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "map_Pcr") {
       command = mtl_command::pbr_coatroughness_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else if (cmd == "Vt") {
       command = mtl_command::vol_transmission;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
     } else if (cmd == "Vp") {
       command = mtl_command::vol_meanfreepath;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
     } else if (cmd == "Ve") {
       command = mtl_command::vol_emission;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
     } else if (cmd == "Vs") {
       command = mtl_command::vol_scattering;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
     } else if (cmd == "Vg") {
       command = mtl_command::vol_anisotropy;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
     } else if (cmd == "Vr") {
       command = mtl_command::vol_scale;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
     } else if (cmd == "map_Vs") {
       command = mtl_command::vol_scattering_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
     } else {
       continue;
     }
@@ -1034,7 +1066,10 @@ bool read_mtl_command(file_wrapper& fs, mtl_command& command, obj_value& value,
 bool read_objx_command(file_wrapper& fs, objx_command& command,
     obj_value& value, obj_texture_info& texture) {
   // set error
-  auto set_error = [&command]() { command = objx_command::error; return true; };
+  auto set_error = [&command]() {
+    command = objx_command::error;
+    return true;
+  };
   // read the file line by line
   char buffer[4096];
   auto pos = ftell(fs.fs);
@@ -1047,69 +1082,83 @@ bool read_objx_command(file_wrapper& fs, objx_command& command,
 
     // get command
     auto cmd = ""s;
-    if(!parse_obj_value(line, cmd)) return set_error();
+    if (!parse_obj_value(line, cmd)) return set_error();
     if (cmd == "") continue;
 
     // read values
     if (cmd == "newcam") {
       command = objx_command::camera;
-      if(!parse_obj_value(line, value, obj_value_type::string)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::string))
+        return set_error();
       return true;
     } else if (cmd == "newenv") {
       command = objx_command::environment;
-      if(!parse_obj_value(line, value, obj_value_type::string)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::string))
+        return set_error();
       return true;
     } else if (cmd == "newist") {
       command = objx_command::instance;
-      if(!parse_obj_value(line, value, obj_value_type::string)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::string))
+        return set_error();
       return true;
     } else if (cmd == "newproc") {
       command = objx_command::procedural;
-      if(!parse_obj_value(line, value, obj_value_type::string)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::string))
+        return set_error();
       return true;
     } else if (cmd == "frame") {
       command = objx_command::frame;
-      if(!parse_obj_value(line, value, obj_value_type::array, 12)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array, 12))
+        return set_error();
       return true;
     } else if (cmd == "obj") {
       command = objx_command::object;
-      if(!parse_obj_value(line, value, obj_value_type::string)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::string))
+        return set_error();
       return true;
     } else if (cmd == "mat") {
       command = objx_command::material;
-      if(!parse_obj_value(line, value, obj_value_type::string)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::string))
+        return set_error();
       return true;
     } else if (cmd == "ortho") {
       command = objx_command::ortho;
-      if(!parse_obj_value(line, value, obj_value_type::boolean)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::boolean))
+        return set_error();
       return true;
     } else if (cmd == "width") {
       command = objx_command::width;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
       return true;
     } else if (cmd == "height") {
       command = objx_command::height;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
       return true;
     } else if (cmd == "lens") {
       command = objx_command::lens;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
       return true;
     } else if (cmd == "aperture") {
       command = objx_command::aperture;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
       return true;
     } else if (cmd == "focus") {
       command = objx_command::focus;
-      if(!parse_obj_value(line, value, obj_value_type::number)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::number))
+        return set_error();
       return true;
     } else if (cmd == "Ke") {
       command = objx_command::emission;
-      if(!parse_obj_value(line, value, obj_value_type::array)) return set_error();
+      if (!parse_obj_value(line, value, obj_value_type::array))
+        return set_error();
       return true;
     } else if (cmd == "map_Ke") {
       command = objx_command::emission_map;
-      if(!parse_obj_value(line, texture)) return set_error();
+      if (!parse_obj_value(line, texture)) return set_error();
       return true;
     }
     // backward compatibility
@@ -1118,14 +1167,22 @@ bool read_objx_command(file_wrapper& fs, objx_command& command,
       auto name = obj_value{}, ortho = obj_value{}, width = obj_value{},
            height = obj_value{}, lens = obj_value{}, aperture = obj_value{},
            focus = obj_value{}, frame = obj_value{};
-      if(!parse_obj_value(line, name, obj_value_type::string)) return set_error();
-      if(!parse_obj_value(line, ortho, obj_value_type::boolean)) return set_error();
-      if(!parse_obj_value(line, width, obj_value_type::number)) return set_error();
-      if(!parse_obj_value(line, height, obj_value_type::number)) return set_error();
-      if(!parse_obj_value(line, lens, obj_value_type::number)) return set_error();
-      if(!parse_obj_value(line, focus, obj_value_type::number)) return set_error();
-      if(!parse_obj_value(line, aperture, obj_value_type::number)) return set_error();
-      if(!parse_obj_value(line, frame, obj_value_type::array, 12)) return set_error();
+      if (!parse_obj_value(line, name, obj_value_type::string))
+        return set_error();
+      if (!parse_obj_value(line, ortho, obj_value_type::boolean))
+        return set_error();
+      if (!parse_obj_value(line, width, obj_value_type::number))
+        return set_error();
+      if (!parse_obj_value(line, height, obj_value_type::number))
+        return set_error();
+      if (!parse_obj_value(line, lens, obj_value_type::number))
+        return set_error();
+      if (!parse_obj_value(line, focus, obj_value_type::number))
+        return set_error();
+      if (!parse_obj_value(line, aperture, obj_value_type::number))
+        return set_error();
+      if (!parse_obj_value(line, frame, obj_value_type::array, 12))
+        return set_error();
       if (command == objx_command::camera && oname != "") {
         command = objx_command::ortho;
         value   = ortho;
@@ -1156,10 +1213,14 @@ bool read_objx_command(file_wrapper& fs, objx_command& command,
     } else if (cmd == "e") {
       auto name = obj_value{}, frame = obj_value{}, emission = obj_value{},
            emission_map = obj_value{};
-      if(!parse_obj_value(line, name, obj_value_type::string)) return set_error();
-      if(!parse_obj_value(line, emission, obj_value_type::array)) return set_error();
-      if(!parse_obj_value(line, emission_map, obj_value_type::string)) return set_error();
-      if(!parse_obj_value(line, frame, obj_value_type::array, 12)) return set_error();
+      if (!parse_obj_value(line, name, obj_value_type::string))
+        return set_error();
+      if (!parse_obj_value(line, emission, obj_value_type::array))
+        return set_error();
+      if (!parse_obj_value(line, emission_map, obj_value_type::string))
+        return set_error();
+      if (!parse_obj_value(line, frame, obj_value_type::array, 12))
+        return set_error();
       if (emission_map.string_ == "\"\"") emission_map.string_ = "";
       if (command == objx_command::environment) {
         command = objx_command::emission;
@@ -1179,10 +1240,14 @@ bool read_objx_command(file_wrapper& fs, objx_command& command,
     } else if (cmd == "i") {
       auto name = obj_value{}, frame = obj_value{}, object = obj_value{},
            material = obj_value{};
-      if(!parse_obj_value(line, name, obj_value_type::string)) return set_error();
-      if(!parse_obj_value(line, object, obj_value_type::string)) return set_error();
-      if(!parse_obj_value(line, material, obj_value_type::string)) return set_error();
-      if(!parse_obj_value(line, frame, obj_value_type::array, 12)) return set_error();
+      if (!parse_obj_value(line, name, obj_value_type::string))
+        return set_error();
+      if (!parse_obj_value(line, object, obj_value_type::string))
+        return set_error();
+      if (!parse_obj_value(line, material, obj_value_type::string))
+        return set_error();
+      if (!parse_obj_value(line, frame, obj_value_type::array, 12))
+        return set_error();
       if (command == objx_command::instance) {
         command = objx_command::object;
         value   = object;
@@ -1201,12 +1266,18 @@ bool read_objx_command(file_wrapper& fs, objx_command& command,
     } else if (cmd == "po") {
       auto name = obj_value{}, frame = obj_value{}, type = obj_value{},
            material = obj_value{}, size = obj_value{}, level = obj_value{};
-      if(!parse_obj_value(line, name, obj_value_type::string)) return set_error();
-      if(!parse_obj_value(line, type, obj_value_type::string)) return set_error();
-      if(!parse_obj_value(line, material, obj_value_type::string)) return set_error();
-      if(!parse_obj_value(line, size, obj_value_type::number)) return set_error();
-      if(!parse_obj_value(line, level, obj_value_type::number)) return set_error();
-      if(!parse_obj_value(line, frame, obj_value_type::array, 12)) return set_error();
+      if (!parse_obj_value(line, name, obj_value_type::string))
+        return set_error();
+      if (!parse_obj_value(line, type, obj_value_type::string))
+        return set_error();
+      if (!parse_obj_value(line, material, obj_value_type::string))
+        return set_error();
+      if (!parse_obj_value(line, size, obj_value_type::number))
+        return set_error();
+      if (!parse_obj_value(line, level, obj_value_type::number))
+        return set_error();
+      if (!parse_obj_value(line, frame, obj_value_type::array, 12))
+        return set_error();
       if (command == objx_command::procedural) {
         command = objx_command::object;
         value   = type;
@@ -1234,9 +1305,9 @@ bool read_objx_command(file_wrapper& fs, objx_command& command,
 bool write_obj_comment(file_wrapper& fs, const string& comment) {
   auto lines = split_string(comment, "\n");
   for (auto& line : lines) {
-    if(fprintf(fs.fs, "# %s\n", line.c_str()) < 0) return false;
+    if (fprintf(fs.fs, "# %s\n", line.c_str()) < 0) return false;
   }
-  if(fprintf(fs.fs, "\n") < 0) return false;
+  if (fprintf(fs.fs, "\n") < 0) return false;
   return true;
 }
 
@@ -1249,28 +1320,32 @@ bool write_obj_command(file_wrapper& fs, obj_command command,
     case obj_command::vertex:
       return fprintf(fs.fs, "v %g %g %g\n", value[0], value[1], value[2]) >= 0;
     case obj_command::normal:
-      return fprintf(fs.fs, "vn %g  %g %g\n", value[0], value[1], value[2]) >= 0;
+      return fprintf(fs.fs, "vn %g  %g %g\n", value[0], value[1], value[2]) >=
+             0;
     case obj_command::texcoord:
       return fprintf(fs.fs, "vt %g %g\n", value[0], value[1]) >= 0;
     case obj_command::face:
     case obj_command::line:
     case obj_command::point:
-      if (command == obj_command::face) if(fprintf(fs.fs, "f ") < 0) return false;
-      if (command == obj_command::line) if(fprintf(fs.fs, "l ") < 0) return false;
-      if (command == obj_command::point) if(fprintf(fs.fs, "p ") < 0) return false;
+      if (command == obj_command::face)
+        if (fprintf(fs.fs, "f ") < 0) return false;
+      if (command == obj_command::line)
+        if (fprintf(fs.fs, "l ") < 0) return false;
+      if (command == obj_command::point)
+        if (fprintf(fs.fs, "p ") < 0) return false;
       for (auto& vert : vertices) {
-        if(fprintf(fs.fs, " ") < 0) return false;
-        if(fprintf(fs.fs, "%d", vert.position) < 0) return false;
+        if (fprintf(fs.fs, " ") < 0) return false;
+        if (fprintf(fs.fs, "%d", vert.position) < 0) return false;
         if (vert.texcoord) {
-          if(fprintf(fs.fs, "/%d", vert.texcoord) < 0) return false;
+          if (fprintf(fs.fs, "/%d", vert.texcoord) < 0) return false;
           if (vert.normal) {
-            if(fprintf(fs.fs, "/%d", vert.normal) < 0) return false;
+            if (fprintf(fs.fs, "/%d", vert.normal) < 0) return false;
           }
         } else if (vert.normal) {
-          if(fprintf(fs.fs, "//%d", vert.normal) < 0) return false;
+          if (fprintf(fs.fs, "//%d", vert.normal) < 0) return false;
         }
       }
-      if(fprintf(fs.fs, "\n") < 0) return false;
+      if (fprintf(fs.fs, "\n") < 0) return false;
       return true;
     case obj_command::object:
       return fprintf(fs.fs, "o %s\n", name.c_str()) >= 0;
@@ -1293,79 +1368,89 @@ bool write_mtl_command(file_wrapper& fs, mtl_command command,
   switch (command) {
     case mtl_command::error: return true;
     case mtl_command::material:
-      return fprintf(fs.fs,"\nnewmtl %s\n", name.c_str()) >= 0;
+      return fprintf(fs.fs, "\nnewmtl %s\n", name.c_str()) >= 0;
     case mtl_command::illum:
-      return fprintf(fs.fs,"  illum %d\n", (int)value) >= 0;
+      return fprintf(fs.fs, "  illum %d\n", (int)value) >= 0;
     case mtl_command::emission:
-      return fprintf(fs.fs,"  Ke %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Ke %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case mtl_command::ambient:
-      return fprintf(fs.fs,"  Ka %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Ka %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case mtl_command::diffuse:
-      return fprintf(fs.fs,"  Kd %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Kd %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case mtl_command::specular:
-      return fprintf(fs.fs,"  Ks %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Ks %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case mtl_command::reflection:
-      return fprintf(fs.fs,"  Kr %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Kr %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case mtl_command::transmission:
-      return fprintf(fs.fs,"  Kt %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Kt %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case mtl_command::exponent:
-      return fprintf(fs.fs,"  Ns %d\n", (int)value) >= 0;
-    case mtl_command::opacity: return fprintf(fs.fs,"  d %g\n", value) >= 0;
-    case mtl_command::ior: return fprintf(fs.fs,"  Ni %g\n", value) >= 0;
+      return fprintf(fs.fs, "  Ns %d\n", (int)value) >= 0;
+    case mtl_command::opacity: return fprintf(fs.fs, "  d %g\n", value) >= 0;
+    case mtl_command::ior: return fprintf(fs.fs, "  Ni %g\n", value) >= 0;
     case mtl_command::emission_map:
-      return fprintf(fs.fs,"  map_Ke %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_Ke %s\n", texture.path.c_str()) >= 0;
     case mtl_command::ambient_map:
-      return fprintf(fs.fs,"  map_Ka %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_Ka %s\n", texture.path.c_str()) >= 0;
     case mtl_command::diffuse_map:
-      return fprintf(fs.fs,"  map_Kd %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_Kd %s\n", texture.path.c_str()) >= 0;
     case mtl_command::specular_map:
-      return fprintf(fs.fs,"  map_Ks %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_Ks %s\n", texture.path.c_str()) >= 0;
     case mtl_command::reflection_map:
-      return fprintf(fs.fs,"  map_Kr %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_Kr %s\n", texture.path.c_str()) >= 0;
     case mtl_command::transmission_map:
-      return fprintf(fs.fs,"  map_Kt %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_Kt %s\n", texture.path.c_str()) >= 0;
     case mtl_command::opacity_map:
-      return fprintf(fs.fs,"  map_d %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_d %s\n", texture.path.c_str()) >= 0;
     case mtl_command::exponent_map:
-      return fprintf(fs.fs,"  map_Ni %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_Ni %s\n", texture.path.c_str()) >= 0;
     case mtl_command::bump_map:
-      return fprintf(fs.fs,"  map_bump %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_bump %s\n", texture.path.c_str()) >= 0;
     case mtl_command::normal_map:
-      return fprintf(fs.fs,"  map_norm %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_norm %s\n", texture.path.c_str()) >= 0;
     case mtl_command::displacement_map:
-      return fprintf(fs.fs,"  map_disp %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_disp %s\n", texture.path.c_str()) >= 0;
     case mtl_command::pbr_roughness:
-      return fprintf(fs.fs,"  Pr %g\n", value) >= 0;
+      return fprintf(fs.fs, "  Pr %g\n", value) >= 0;
     case mtl_command::pbr_metallic:
-      return fprintf(fs.fs,"  Pm %g\n", value) >= 0;
-    case mtl_command::pbr_sheen: return fprintf(fs.fs,"  Ps %g\n", value) >= 0;
+      return fprintf(fs.fs, "  Pm %g\n", value) >= 0;
+    case mtl_command::pbr_sheen: return fprintf(fs.fs, "  Ps %g\n", value) >= 0;
     case mtl_command::pbr_clearcoat:
-      return fprintf(fs.fs,"  Pc %g\n", value) >= 0;
+      return fprintf(fs.fs, "  Pc %g\n", value) >= 0;
     case mtl_command::pbr_coatroughness:
-      return fprintf(fs.fs,"  Pcr %g\n", value) >= 0;
+      return fprintf(fs.fs, "  Pcr %g\n", value) >= 0;
     case mtl_command::pbr_roughness_map:
-      return fprintf(fs.fs,"  Pr_map %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  Pr_map %s\n", texture.path.c_str()) >= 0;
     case mtl_command::pbr_metallic_map:
-      return fprintf(fs.fs,"  Pm_map %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  Pm_map %s\n", texture.path.c_str()) >= 0;
     case mtl_command::pbr_sheen_map:
-      return fprintf(fs.fs,"  Ps_map %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  Ps_map %s\n", texture.path.c_str()) >= 0;
     case mtl_command::pbr_clearcoat_map:
-      return fprintf(fs.fs,"  Pc_map %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  Pc_map %s\n", texture.path.c_str()) >= 0;
     case mtl_command::pbr_coatroughness_map:
-      return fprintf(fs.fs,"  Pcr_map %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  Pcr_map %s\n", texture.path.c_str()) >= 0;
     case mtl_command::vol_transmission:
-      return fprintf(fs.fs,"  Vt %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Vt %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case mtl_command::vol_meanfreepath:
-      return fprintf(fs.fs,"  Vp %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Vp %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case mtl_command::vol_emission:
-      return fprintf(fs.fs,"  Ve %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Ve %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case mtl_command::vol_scattering:
-      return fprintf(fs.fs,"  Vs %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Vs %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case mtl_command::vol_anisotropy:
-      return fprintf(fs.fs,"  Vg %g\n", value) >= 0;
-    case mtl_command::vol_scale: return fprintf(fs.fs,"  Vr %g\n", value) >= 0;
+      return fprintf(fs.fs, "  Vg %g\n", value) >= 0;
+    case mtl_command::vol_scale: return fprintf(fs.fs, "  Vr %g\n", value) >= 0;
     case mtl_command::vol_scattering_map:
-      return fprintf(fs.fs,"  Vs_map %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  Vs_map %s\n", texture.path.c_str()) >= 0;
   }
 }
 
@@ -1378,33 +1463,35 @@ bool write_objx_command(file_wrapper& fs, objx_command command,
   switch (command) {
     case objx_command::error: return true;
     case objx_command::camera:
-      return fprintf(fs.fs,"\nnewcam %s\n", name.c_str()) >= 0;
+      return fprintf(fs.fs, "\nnewcam %s\n", name.c_str()) >= 0;
     case objx_command::environment:
-      return fprintf(fs.fs,"\nnewenv %s\n", name.c_str()) >= 0;
+      return fprintf(fs.fs, "\nnewenv %s\n", name.c_str()) >= 0;
     case objx_command::instance:
-      return fprintf(fs.fs,"\nnewist %s\n", name.c_str()) >= 0;
+      return fprintf(fs.fs, "\nnewist %s\n", name.c_str()) >= 0;
     case objx_command::procedural:
-      return fprintf(fs.fs,"\nnewproc %s\n", name.c_str()) >= 0;
+      return fprintf(fs.fs, "\nnewproc %s\n", name.c_str()) >= 0;
     case objx_command::frame:
-      return fprintf(fs.fs,"  frame %g %g %g %g %g %g %g %g %g %g %g %g\n",
-          frame[0], frame[1], frame[2], frame[3], frame[4], frame[5], frame[6],
-          frame[7], frame[8], frame[9], frame[10], frame[11]) >= 0;
+      return fprintf(fs.fs, "  frame %g %g %g %g %g %g %g %g %g %g %g %g\n",
+                 frame[0], frame[1], frame[2], frame[3], frame[4], frame[5],
+                 frame[6], frame[7], frame[8], frame[9], frame[10],
+                 frame[11]) >= 0;
     case objx_command::object:
-      return fprintf(fs.fs,"  obj %s\n", name.c_str()) >= 0;
+      return fprintf(fs.fs, "  obj %s\n", name.c_str()) >= 0;
     case objx_command::material:
-      return fprintf(fs.fs,"  mat %s\n", name.c_str()) >= 0;
-    case objx_command::ortho: return fprintf(fs.fs,"  ortho %g\n", value) >= 0;
-    case objx_command::width: return fprintf(fs.fs,"  width %g\n", value) >= 0;
+      return fprintf(fs.fs, "  mat %s\n", name.c_str()) >= 0;
+    case objx_command::ortho: return fprintf(fs.fs, "  ortho %g\n", value) >= 0;
+    case objx_command::width: return fprintf(fs.fs, "  width %g\n", value) >= 0;
     case objx_command::height:
-      return fprintf(fs.fs,"  height %g\n", value) >= 0;
-    case objx_command::lens: return fprintf(fs.fs,"  lens %g\n", value) >= 0;
+      return fprintf(fs.fs, "  height %g\n", value) >= 0;
+    case objx_command::lens: return fprintf(fs.fs, "  lens %g\n", value) >= 0;
     case objx_command::aperture:
-      return fprintf(fs.fs,"  aperture %g\n", value) >= 0;
-    case objx_command::focus: return fprintf(fs.fs,"  focus %g\n", value) >= 0;
+      return fprintf(fs.fs, "  aperture %g\n", value) >= 0;
+    case objx_command::focus: return fprintf(fs.fs, "  focus %g\n", value) >= 0;
     case objx_command::emission:
-      return fprintf(fs.fs,"  Ke %g %g %g\n", color[0], color[1], color[2]) >= 0;
+      return fprintf(fs.fs, "  Ke %g %g %g\n", color[0], color[1], color[2]) >=
+             0;
     case objx_command::emission_map:
-      return fprintf(fs.fs,"  map_Ke %s\n", texture.path.c_str()) >= 0;
+      return fprintf(fs.fs, "  map_Ke %s\n", texture.path.c_str()) >= 0;
   }
 }
 
@@ -1512,7 +1599,7 @@ static inline bool parse_yaml_varname(string_view& str, string_view& value) {
 }
 static inline bool parse_yaml_varname(string_view& str, string& value) {
   auto view = ""sv;
-  if(!parse_yaml_varname(str, view)) return false;
+  if (!parse_yaml_varname(str, view)) return false;
   value = string{view};
   return true;
 }
@@ -1543,7 +1630,7 @@ static inline bool parse_yaml_value(string_view& str, string_view& value) {
 }
 static inline bool parse_yaml_value(string_view& str, string& value) {
   auto valuev = ""sv;
-  if(!parse_yaml_value(str, valuev)) return false;
+  if (!parse_yaml_value(str, valuev)) return false;
   value = string{valuev};
   return true;
 }
@@ -1664,7 +1751,7 @@ static bool parse_yaml_value(string_view& str, yaml_value& value) {
     return parse_yaml_value(str, value.number);
   } else {
     value.type = yaml_value_type::string;
-    if(!parse_yaml_value(str, value.string_)) return false;
+    if (!parse_yaml_value(str, value.string_)) return false;
     if (value.string_ == "true" || value.string_ == "false") {
       value.type    = yaml_value_type::boolean;
       value.boolean = value.string_ == "true";
@@ -1679,7 +1766,10 @@ static bool parse_yaml_value(string_view& str, yaml_value& value) {
 bool read_yaml_property(file_wrapper& fs, string& group, string& key,
     bool& newobj, yaml_value& value, bool& error) {
   // set error
-  auto set_error = [&error]() { error = true; return false; };
+  auto set_error = [&error]() {
+    error = true;
+    return false;
+  };
   // read the file line by line
   char buffer[4096];
   while (read_line(fs, buffer, sizeof(buffer))) {
@@ -1702,23 +1792,21 @@ bool read_yaml_property(file_wrapper& fs, string& group, string& key,
       } else {
         newobj = false;
       }
-      if(!parse_yaml_varname(line, key)) return set_error();
+      if (!parse_yaml_varname(line, key)) return set_error();
       skip_whitespace(line);
-      if (line.empty() || line.front() != ':')
-        return set_error();
+      if (line.empty() || line.front() != ':') return set_error();
       line.remove_prefix(1);
-      if(!parse_yaml_value(line, value)) return set_error();
+      if (!parse_yaml_value(line, value)) return set_error();
       return true;
     } else if (is_alpha(line.front())) {
       // new group
-      if(!parse_yaml_varname(line, key)) return set_error();
+      if (!parse_yaml_varname(line, key)) return set_error();
       skip_whitespace(line);
-      if (line.empty() || line.front() != ':')
-        return set_error();
+      if (line.empty() || line.front() != ':') return set_error();
       line.remove_prefix(1);
       if (!line.empty() && !is_whitespace(line)) {
         group = "";
-        if(!parse_yaml_value(line, value)) return set_error();
+        if (!parse_yaml_value(line, value)) return set_error();
         return true;
       } else {
         group = key;
@@ -1735,9 +1823,9 @@ bool read_yaml_property(file_wrapper& fs, string& group, string& key,
 bool write_yaml_comment(file_wrapper& fs, const string& comment) {
   auto lines = split_string(comment, "\n");
   for (auto& line : lines) {
-    if(fprintf(fs.fs, "# %s\n", line.c_str()) < 0) return false;
+    if (fprintf(fs.fs, "# %s\n", line.c_str()) < 0) return false;
   }
-  if(fprintf(fs.fs, "\n") < 0) return false;
+  if (fprintf(fs.fs, "\n") < 0) return false;
   return true;
 }
 
@@ -1745,33 +1833,35 @@ bool write_yaml_comment(file_wrapper& fs, const string& comment) {
 bool write_yaml_property(file_wrapper& fs, const string& object,
     const string& key, bool newobj, const yaml_value& value) {
   if (key.empty()) {
-    if(fprintf(fs.fs, "\n%s:\n", object.c_str()) < 0) return false;
+    if (fprintf(fs.fs, "\n%s:\n", object.c_str()) < 0) return false;
     return true;
   } else {
     if (!object.empty()) {
-      if(fprintf(fs.fs, (newobj ? "  - " : "    ")) < 0) return false;
+      if (fprintf(fs.fs, (newobj ? "  - " : "    ")) < 0) return false;
     }
-    if(fprintf(fs.fs, "%s: ", key.c_str()) < 0) return false;
+    if (fprintf(fs.fs, "%s: ", key.c_str()) < 0) return false;
     switch (value.type) {
       case yaml_value_type::number:
-        if(fprintf(fs.fs, "%g", value.number) < 0) return false;
+        if (fprintf(fs.fs, "%g", value.number) < 0) return false;
         break;
       case yaml_value_type::boolean:
-        if(fprintf(fs.fs, "%s", value.boolean ? "true" : "false") < 0) return false;
+        if (fprintf(fs.fs, "%s", value.boolean ? "true" : "false") < 0)
+          return false;
         break;
       case yaml_value_type::string:
-        if(fprintf(fs.fs, "%s", value.string_.c_str()) < 0) return false;
+        if (fprintf(fs.fs, "%s", value.string_.c_str()) < 0) return false;
         break;
       case yaml_value_type::array:
-        if(fprintf(fs.fs, "[ ") < 0) return false;
+        if (fprintf(fs.fs, "[ ") < 0) return false;
         for (auto i = 0; i < value.number; i++) {
-          if (i) if(fprintf(fs.fs, ", ") < 0) return false;
-          if(fprintf(fs.fs, "%g", value.array_[i]) < 0) return false;
+          if (i)
+            if (fprintf(fs.fs, ", ") < 0) return false;
+          if (fprintf(fs.fs, "%g", value.array_[i]) < 0) return false;
         }
-        if(fprintf(fs.fs, " ]") < 0) return false;
+        if (fprintf(fs.fs, " ]") < 0) return false;
         break;
     }
-    if(fprintf(fs.fs, "\n") < 0) return false;
+    if (fprintf(fs.fs, "\n") < 0) return false;
     return true;
   }
 }

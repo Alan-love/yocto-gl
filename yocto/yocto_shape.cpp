@@ -3055,14 +3055,11 @@ bool load_shape(const string& filename, vector<int>& points,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, vector<vec4f>& colors,
     vector<float>& radius, bool facevarying) {
-auto err = ""s;
-return load_shape(filename,points,
-    lines, triangles, quads,
-    quadspos, quadsnorm,
-    quadstexcoord, positions,
-    normals, texcoords, colors,
-    radius, facevarying, err);
-    }
+  auto err = ""s;
+  return load_shape(filename, points, lines, triangles, quads, quadspos,
+      quadsnorm, quadstexcoord, positions, normals, texcoords, colors, radius,
+      facevarying, err);
+}
 bool save_shape(const string& filename, const vector<int>& points,
     const vector<vec2i>& lines, const vector<vec3i>& triangles,
     const vector<vec4i>& quads, const vector<vec4i>& quadspos,
@@ -3070,15 +3067,11 @@ bool save_shape(const string& filename, const vector<int>& points,
     const vector<vec3f>& positions, const vector<vec3f>& normals,
     const vector<vec2f>& texcoords, const vector<vec4f>& colors,
     const vector<float>& radius, bool ascii) {
-auto err = ""s;
-return save_shape(filename, points,
-    lines, triangles,
-    quads, quadspos,
-    quadsnorm, quadstexcoord,
-    positions, normals,
-    texcoords, colors,
-    radius, ascii, err);
-    }
+  auto err = ""s;
+  return save_shape(filename, points, lines, triangles, quads, quadspos,
+      quadsnorm, quadstexcoord, positions, normals, texcoords, colors, radius,
+      ascii, err);
+}
 
 static bool load_ply_shape(const string& filename, vector<int>& points,
     vector<vec2i>& lines, vector<vec3i>& triangles, vector<vec4i>& quads,
