@@ -91,21 +91,19 @@ int main(int argc, const char** argv) {
 
   // load scene
   auto scene = yocto_scene{};
-  try {
-    auto timer = print_timed("loading scene");
-    load_scene(filename, scene, load_prms);
-  } catch (const std::exception& e) {
-    print_fatal(e.what());
-  }
+  auto load_timer = print_timed("loading scene");
+  if(!load_scene(filename, scene, load_prms)) print_fatal("cannot load " + filename);
+  load_timer.done();
 
   // validate scene
   if (validate) {
-    auto timer = print_timed("validating scene");
+    auto validate_timer = print_timed("validating scene");
     print_validation(scene);
+    validate_timer.done();
   }
 
   // print info
-  if (info) printf("%s\n", format_stats(scene).c_str());
+  if (info) print_info(format_stats(scene));
 
   // change texture names
   if (uniform_txt) {
@@ -120,10 +118,9 @@ int main(int argc, const char** argv) {
   }
 
   // tesselating scene
-  {
-    auto timer = print_timed("tesselating scene");
-    tesselate_subdivs(scene);
-  }
+  auto tesselate_timer = print_timed("tesselating scene");
+  tesselate_subdivs(scene);
+  tesselate_timer.done();
 
   // add missing mesh names if necessary
   if (!shape_directory.empty() && shape_directory.back() != '/')
@@ -168,17 +165,14 @@ int main(int argc, const char** argv) {
     dirnames.insert(dirname / fs::path(texture.uri).parent_path());
   for (auto& dir : dirnames) {
     if (!mkdir(fs::path(dir))) {
-      printf("cannot create directory %s\n", fs::path(output).c_str());
+      print_info("cannot create directory " + fs::path(output).string());
     }
   }
 
   // save scene
-  try {
-    auto timer = print_timed("saving scene");
-    save_scene(output, scene, save_prms);
-  } catch (const std::exception& e) {
-    print_fatal(e.what());
-  }
+  auto save_timer = print_timed("saving scene");
+  if(!save_scene(output, scene, save_prms)) print_fatal("cannot save " + output);
+  save_timer.done();
 
   // done
   return 0;
