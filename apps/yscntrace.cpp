@@ -114,7 +114,7 @@ int main(int argc, const char* argv[]) {
   // scene loading
   auto scene      = yocto_scene{};
   auto load_timer = print_timed("loading scene");
-  if (!load_scene_(filename, scene, load_prms))
+  if (!load_scene(filename, scene, load_prms))
     print_fatal("cannot load scene " + filename);
   load_timer.done();
 

@@ -1073,7 +1073,7 @@ int main(int argc, const char** argv) {
   save_prms.notextures = false;
   save_prms.noparallel = false;
   // save_prms.ply_instances = true;
-  if (!save_scene_(output, scene, save_prms))
+  if (!save_scene(output, scene, save_prms))
     print_fatal("cannot save " + output);
   save_timer.done();
 

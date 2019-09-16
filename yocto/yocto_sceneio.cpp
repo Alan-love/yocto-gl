@@ -286,12 +286,12 @@ bool save_scene(const string& filename, const yocto_scene& scene, string& error,
   }
 }
 
-bool load_scene_(
+bool load_scene(
     const string& filename, yocto_scene& scene, const load_params& params) {
 auto err = ""s;
 return load_scene(filename, scene, err, params);
     }
-bool save_scene_(const string& filename, const yocto_scene& scene,
+bool save_scene(const string& filename, const yocto_scene& scene,
     const save_params& params) {
 auto err = ""s;
 return save_scene(filename, scene, err, params);

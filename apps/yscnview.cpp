@@ -1129,7 +1129,7 @@ void update(const opengl_window& win, app_state& app) {
         log_glinfo(win, "start loading " + scn.filename);
         scn.load_done = false;
         task.result   = std::async(std::launch::async, [&scn]() {
-          if (!load_scene_(scn.filename, scn.scene, scn.load_prms))
+          if (!load_scene(scn.filename, scn.scene, scn.load_prms))
             throw std::runtime_error("cannot load " + scn.filename);
           tesselate_subdivs(scn.scene);
           init_drawgl_lights(scn.lights, scn.scene);
@@ -1156,7 +1156,7 @@ void update(const opengl_window& win, app_state& app) {
       case app_task_type::save_scene: {
         log_glinfo(win, "start saving " + scn.outname);
         task.result = std::async(std::launch::async, [&scn]() {
-          if (!save_scene_(scn.outname, scn.scene, scn.save_prms))
+          if (!save_scene(scn.outname, scn.scene, scn.save_prms))
             throw std::runtime_error("cannot save " + scn.outname);
         });
       } break;
