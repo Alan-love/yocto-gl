@@ -417,7 +417,7 @@ struct pbrt_value {
 };
 
 // Pbrt command
-enum struct pbrt_command_ {
+enum struct pbrt_command {
   // clang-format off
   world_begin, world_end, attribute_begin, attribute_end,
   transform_begin, transform_end, reverse_orientation,
@@ -431,20 +431,20 @@ enum struct pbrt_command_ {
 };
 
 // Read pbrt commands. Sets error on error.
-bool read_pbrt_command(file_wrapper& fs, pbrt_command_& command, string& name,
+bool read_pbrt_command(file_wrapper& fs, pbrt_command& command, string& name,
     string& type, frame3f& xform, vector<pbrt_value>& values, bool& error);
-bool read_pbrt_command(file_wrapper& fs, pbrt_command_& command, string& name,
+bool read_pbrt_command(file_wrapper& fs, pbrt_command& command, string& name,
     string& type, frame3f& xform, vector<pbrt_value>& values, bool& error, 
     string& buffer);
 
 // Write pbrt commands
 bool write_pbrt_comment(file_wrapper& fs, const string& comment);
-bool write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
+bool write_pbrt_command(file_wrapper& fs, pbrt_command command,
     const string& name, const string& type, const frame3f& xform,
     const vector<pbrt_value>& values, bool texture_as_float = false);
-bool write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
+bool write_pbrt_command(file_wrapper& fs, pbrt_command command,
     const string& name = "", const frame3f& xform = identity3x4f);
-bool write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
+bool write_pbrt_command(file_wrapper& fs, pbrt_command command,
     const string& name, const string& type, const vector<pbrt_value>& values,
     bool texture_as_float = false);
 

@@ -3868,7 +3868,7 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
   if (stack.empty()) stack.emplace_back();
 
   // parse command by command
-  auto command = pbrt_command_{};
+  auto command = pbrt_command{};
   auto name    = ""s;
   auto type    = ""s;
   auto xform   = identity3x4f;
@@ -3881,29 +3881,29 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
       continue;
     }
     switch (command) {
-      case pbrt_command_::world_begin: {
+      case pbrt_command::world_begin: {
         stack.push_back({});
       } break;
-      case pbrt_command_::world_end: {
+      case pbrt_command::world_end: {
         if (stack.empty()) throw std::runtime_error("bad pbrt stack");
         stack.pop_back();
         if (stack.size() != 1) throw std::runtime_error("bad stack");
       } break;
-      case pbrt_command_::attribute_begin: {
+      case pbrt_command::attribute_begin: {
         stack.push_back(stack.back());
       } break;
-      case pbrt_command_::attribute_end: {
+      case pbrt_command::attribute_end: {
         if (stack.empty()) throw std::runtime_error("bad pbrt stack");
         stack.pop_back();
       } break;
-      case pbrt_command_::transform_begin: {
+      case pbrt_command::transform_begin: {
         stack.push_back(stack.back());
       } break;
-      case pbrt_command_::transform_end: {
+      case pbrt_command::transform_end: {
         if (stack.empty()) throw std::runtime_error("bad pbrt stack");
         stack.pop_back();
       } break;
-      case pbrt_command_::active_transform: {
+      case pbrt_command::active_transform: {
         if (name == "StartTime") {
           stack.back().active_transform_start = true;
           stack.back().active_transform_end   = false;
@@ -3917,37 +3917,37 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
           throw std::runtime_error("bad active transform");
         }
       } break;
-      case pbrt_command_::set_transform: {
+      case pbrt_command::set_transform: {
         set_transform(stack.back(), xform);
       } break;
-      case pbrt_command_::concat_transform: {
+      case pbrt_command::concat_transform: {
         concat_transform(stack.back(), xform);
       } break;
-      case pbrt_command_::lookat_transform: {
+      case pbrt_command::lookat_transform: {
         auto [from, to, up, skip] = xform;
         // from pbrt parser
         auto frame = lookat_frame(from, to, up, true);
         concat_transform(stack.back(), inverse(frame));
         stack.back().last_lookat_distance = length(from - to);
       } break;
-      case pbrt_command_::reverse_orientation: {
+      case pbrt_command::reverse_orientation: {
         stack.back().reverse = !stack.back().reverse;
       } break;
-      case pbrt_command_::film: {
+      case pbrt_command::film: {
         add_pbrt_film(scene, type, values, stack.back(), last_film_aspect);
       } break;
-      case pbrt_command_::camera: {
+      case pbrt_command::camera: {
         add_pbrt_camera(scene, type, values, stack.back(), last_film_aspect);
       } break;
-      case pbrt_command_::shape: {
+      case pbrt_command::shape: {
         add_pbrt_shape(scene, type, values, stack.back(),
             "shapes/shape__" + std::to_string(shape_id++) + ".ply", filename,
             cur_object, omap, mmap, amap, ammap);
       } break;
-      case pbrt_command_::light: {
+      case pbrt_command::light: {
         add_pbrt_light(scene, type, values, stack.back());
       } break;
-      case pbrt_command_::named_texture: {
+      case pbrt_command::named_texture: {
         add_pbrt_texture(
             scene, type, values, stack.back(), name, tmap, ctmap, timap);
         if (type == "constant") {
@@ -3955,7 +3955,7 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
           // TODO: FIX CONSTANT TEXTURES
         }
       } break;
-      case pbrt_command_::material: {
+      case pbrt_command::material: {
         static auto material_id = 0;
         if (type == "") {
           stack.back().material = "";
@@ -3966,19 +3966,19 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
               scene, type, values, stack.back(), name, mmap, tmap, ctmap);
         }
       } break;
-      case pbrt_command_::named_material: {
+      case pbrt_command::named_material: {
         stack.back().material = name;
         add_pbrt_material(
             scene, type, values, stack.back(), name, mmap, tmap, ctmap);
       } break;
-      case pbrt_command_::use_material: {
+      case pbrt_command::use_material: {
         stack.back().material = name;
       } break;
-      case pbrt_command_::named_medium: {
+      case pbrt_command::named_medium: {
         // skip
         break;
       } break;
-      case pbrt_command_::medium_interface: {
+      case pbrt_command::medium_interface: {
         auto interior = ""s, exterior = ""s;
         auto found = false;
         for (auto c : name) {
@@ -3994,13 +3994,13 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
         stack.back().medium_interior = interior;
         stack.back().medium_exterior = exterior;
       } break;
-      case pbrt_command_::arealight: {
+      case pbrt_command::arealight: {
         static auto material_id = 0;
         name = "unnamed_arealight_" + std::to_string(material_id++);
         stack.back().arealight = name;
         add_pbrt_arealight(scene, type, values, stack.back(), name, amap);
       } break;
-      case pbrt_command_::object_instance: {
+      case pbrt_command::object_instance: {
         auto& pinstances = omap.at(name);
         for (auto& pinstance : pinstances) {
           auto instance  = yocto_instance();
@@ -4011,16 +4011,16 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
           scene.instances.push_back(instance);
         }
       } break;
-      case pbrt_command_::object_begin: {
+      case pbrt_command::object_begin: {
         stack.push_back(stack.back());
         cur_object       = name;
         omap[cur_object] = {};
       } break;
-      case pbrt_command_::object_end: {
+      case pbrt_command::object_end: {
         stack.pop_back();
         cur_object = "";
       } break;
-      case pbrt_command_::include: {
+      case pbrt_command::include: {
         if (!open_file(
                 files.emplace_back(), fs::path(filename).parent_path() / name))
           return set_sceneio_error(error, filename, false, "error in include",
@@ -4028,20 +4028,20 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
                   (fs::path(filename).parent_path() / name).string() +
                   ": file not found");
       } break;
-      case pbrt_command_::coordinate_system_set: {
+      case pbrt_command::coordinate_system_set: {
         coordsys[name] = {
             stack.back().transform_start, stack.back().transform_end};
       } break;
-      case pbrt_command_::coordinate_system_transform: {
+      case pbrt_command::coordinate_system_transform: {
         if (coordsys.find(name) != coordsys.end()) {
           stack.back().transform_start = coordsys.at(name).first;
           stack.back().transform_end   = coordsys.at(name).second;
         }
       } break;
-      case pbrt_command_::sampler:
-      case pbrt_command_::integrator:
-      case pbrt_command_::accelerator:
-      case pbrt_command_::filter:
+      case pbrt_command::sampler:
+      case pbrt_command::integrator:
+      case pbrt_command::accelerator:
+      case pbrt_command::filter:
         // ignored for now
         break;
     }
@@ -4092,23 +4092,23 @@ static bool save_pbrt(
   auto  up         = camera.frame.y;
   auto  image_size = camera_resolution(camera, 1280);
   write_pbrt_command(
-      fs, pbrt_command_::lookat_transform, "", frame3f{from, to, up, zero3f});
-  write_pbrt_command(fs, pbrt_command_::camera, "", "perspective",
+      fs, pbrt_command::lookat_transform, "", frame3f{from, to, up, zero3f});
+  write_pbrt_command(fs, pbrt_command::camera, "", "perspective",
       {make_pbrt_value("perspective", camera_fov(camera).x * 180 / pif)});
-  write_pbrt_command(fs, pbrt_command_::sampler, "", "random",
+  write_pbrt_command(fs, pbrt_command::sampler, "", "random",
       {make_pbrt_value("pixelsamples", 64)});
-  write_pbrt_command(fs, pbrt_command_::integrator, "", "path", {});
-  write_pbrt_command(fs, pbrt_command_::film, "", "image",
+  write_pbrt_command(fs, pbrt_command::integrator, "", "path", {});
+  write_pbrt_command(fs, pbrt_command::film, "", "image",
       {make_pbrt_value("filename", fs::path(filename).stem().string() + ".exr"),
           make_pbrt_value("xresolution", image_size.x),
           make_pbrt_value("yresolution", image_size.y)});
 
   // start world
-  write_pbrt_command(fs, pbrt_command_::world_begin);
+  write_pbrt_command(fs, pbrt_command::world_begin);
 
   // convert textures
   for (auto& texture : scene.textures) {
-    write_pbrt_command(fs, pbrt_command_::named_texture,
+    write_pbrt_command(fs, pbrt_command::named_texture,
         fs::path(texture.uri).stem().string(), "imagemap",
         {make_pbrt_value("filename", texture.uri)});
   }
@@ -4124,7 +4124,7 @@ static bool save_pbrt(
     }
   };
   for (auto& material : scene.materials) {
-    write_pbrt_command(fs, pbrt_command_::named_material,
+    write_pbrt_command(fs, pbrt_command::named_material,
         fs::path(material.uri).stem().string().c_str(), "uber",
         {
             make_pbrt_textured("Kd", material.diffuse, material.diffuse_tex),
@@ -4140,24 +4140,24 @@ static bool save_pbrt(
   for (auto& instance : scene.instances) {
     auto& shape    = scene.shapes[instance.shape];
     auto& material = scene.materials[instance.material];
-    write_pbrt_command(fs, pbrt_command_::attribute_begin);
-    write_pbrt_command(fs, pbrt_command_::transform_begin);
-    write_pbrt_command(fs, pbrt_command_::set_transform, "", instance.frame);
-    write_pbrt_command(fs, pbrt_command_::use_material,
+    write_pbrt_command(fs, pbrt_command::attribute_begin);
+    write_pbrt_command(fs, pbrt_command::transform_begin);
+    write_pbrt_command(fs, pbrt_command::set_transform, "", instance.frame);
+    write_pbrt_command(fs, pbrt_command::use_material,
         fs::path(material.uri).stem().string());
     if (material.emission != zero3f) {
-      write_pbrt_command(fs, pbrt_command_::arealight, "", "diffuse",
+      write_pbrt_command(fs, pbrt_command::arealight, "", "diffuse",
           {make_pbrt_value("L", material.emission, pbrt_value_type::color)});
     }
-    write_pbrt_command(fs, pbrt_command_::shape, "", "plymesh",
+    write_pbrt_command(fs, pbrt_command::shape, "", "plymesh",
         {make_pbrt_value("filename",
             fs::path(shape.uri).replace_extension(".ply").string())});
-    write_pbrt_command(fs, pbrt_command_::transform_end);
-    write_pbrt_command(fs, pbrt_command_::attribute_end);
+    write_pbrt_command(fs, pbrt_command::transform_end);
+    write_pbrt_command(fs, pbrt_command::attribute_end);
   }
 
   // end world
-  write_pbrt_command(fs, pbrt_command_::world_end);
+  write_pbrt_command(fs, pbrt_command::world_end);
 
   return true;
 }
