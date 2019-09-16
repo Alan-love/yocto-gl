@@ -90,9 +90,10 @@ int main(int argc, const char** argv) {
   save_prms.objinstances = obj_instances;
 
   // load scene
-  auto scene = yocto_scene{};
+  auto scene      = yocto_scene{};
   auto load_timer = print_timed("loading scene");
-  if(!load_scene(filename, scene, load_prms)) print_fatal("cannot load " + filename);
+  if (!load_scene(filename, scene, load_prms))
+    print_fatal("cannot load " + filename);
   load_timer.done();
 
   // validate scene
@@ -171,7 +172,8 @@ int main(int argc, const char** argv) {
 
   // save scene
   auto save_timer = print_timed("saving scene");
-  if(!save_scene(output, scene, save_prms)) print_fatal("cannot save " + output);
+  if (!save_scene(output, scene, save_prms))
+    print_fatal("cannot save " + output);
   save_timer.done();
 
   // done

@@ -1660,7 +1660,9 @@ static sceneio_result load_obj(
   // check for extension
   auto extname = fs::path(filename).replace_extension(".objx");
   if (fs::exists(extname)) {
-    if(auto err = load_objx(extname, scene, mmap, tmap, object_shapes, params); !err) return err;
+    if (auto err = load_objx(extname, scene, mmap, tmap, object_shapes, params);
+        !err)
+      return err;
   }
 
   // cleanup empty
@@ -3722,7 +3724,7 @@ static sceneio_result load_pbrt(
     const string& filename, yocto_scene& scene, const load_params& params) {
   auto files = vector<file_wrapper>{};
   open_file(files.emplace_back(), filename);
-  if(!files.back()) return {sceneio_status::file_not_found};
+  if (!files.back()) return {sceneio_status::file_not_found};
 
   // parse state
   auto        mmap       = unordered_map<string, yocto_material>{{"", {}}};
@@ -3938,12 +3940,12 @@ static sceneio_result load_pbrt_scene(
     const string& filename, yocto_scene& scene, const load_params& params) {
   scene = yocto_scene{};
 
-    // Parse pbrt
-    if(auto err = load_pbrt(filename, scene, params); !err) return err;
+  // Parse pbrt
+  if (auto err = load_pbrt(filename, scene, params); !err) return err;
 
-    // load textures
-    auto dirname = fs::path(filename).parent_path();
-    if(auto err = load_textures(scene, dirname, params); !err) return err;
+  // load textures
+  auto dirname = fs::path(filename).parent_path();
+  if (auto err = load_textures(scene, dirname, params); !err) return err;
 
   // fix scene
   scene.uri = fs::path(filename).filename();
