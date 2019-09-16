@@ -57,21 +57,15 @@
 namespace yocto {
 
 // Result of file io operations.
-enum struct sceneio_status {
-  // clang-format off
-  ok, file_not_found, io_error, bad_data, unsupported_format,
-  bad_texture, bad_shape, bad_voltexture, bad_subdiv
-  // clang-format on
-};
 struct [[nodiscard]] sceneio_result {
-  sceneio_status status        = sceneio_status::ok;
-  int            line          = 0;
-  imageio_result istatus       = {};
-  shapeio_result sstatus       = {};
-  int            element_index = -1;
-
-  operator bool() const { return status == sceneio_status::ok; }
+  string error = "";
+         operator bool() const { return error.empty(); }
 };
+static inline sceneio_result sceneio_ok() { return {}; }
+static inline sceneio_result sceneio_error(
+    const string& filename, bool save, const string& msg) {
+  return {(save ? "error saving " : "error loading ") + filename + ": " + msg};
+}
 
 // Scene load params
 struct load_params {
@@ -94,21 +88,6 @@ sceneio_result load_scene(
     const string& filename, yocto_scene& scene, const load_params& params = {});
 sceneio_result save_scene(const string& filename, const yocto_scene& scene,
     const save_params& params = {});
-
-// Load/save scene textures
-imageio_result load_texture(yocto_texture& texture, const string& dirname);
-imageio_result save_texture(
-    const yocto_texture& texture, const string& dirname);
-imageio_result load_voltexture(
-    yocto_voltexture& texture, const string& dirname);
-imageio_result save_voltexture(
-    const yocto_voltexture& texture, const string& dirname);
-
-// Load/save scene shapes
-shapeio_result load_shape(yocto_shape& shape, const string& dirname);
-shapeio_result save_shape(const yocto_shape& shape, const string& dirname);
-shapeio_result load_subdiv(yocto_subdiv& subdiv, const string& dirname);
-shapeio_result save_subdiv(const yocto_subdiv& subdiv, const string& dirname);
 
 }  // namespace yocto
 
