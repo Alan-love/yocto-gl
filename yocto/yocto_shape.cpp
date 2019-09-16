@@ -3110,7 +3110,8 @@ static shapeio_result load_ply_shape(const string& filename,
     }
   }
 
-  if (positions.empty()) return shapeio_error(filename, false, "missing vertex positions");
+  if (positions.empty())
+    return shapeio_error(filename, false, "missing vertex positions");
 
   // fix texture coordinated
   if (flip_texcoord && !texcoords.empty()) {
@@ -3451,7 +3452,8 @@ static shapeio_result load_obj_shape(const string& filename,
     }
   }
 
-  if (positions.empty()) return shapeio_error(filename, false, "missing vertex positions");
+  if (positions.empty())
+    return shapeio_error(filename, false, "missing vertex positions");
 
   // fix texture coordinated
   if (flip_texcoord && !texcoords.empty()) {
