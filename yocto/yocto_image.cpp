@@ -1825,22 +1825,6 @@ static inline bool save_pfm(
   return true;
 }
 
-// load exr image weith tiny exr
-static inline const char* get_tinyexr_error(int error) {
-  switch (error) {
-    case TINYEXR_ERROR_INVALID_MAGIC_NUMBER: return "INVALID_MAGIC_NUMBER";
-    case TINYEXR_ERROR_INVALID_EXR_VERSION: return "INVALID_EXR_VERSION";
-    case TINYEXR_ERROR_INVALID_ARGUMENT: return "INVALID_ARGUMENT";
-    case TINYEXR_ERROR_INVALID_DATA: return "INVALID_DATA";
-    case TINYEXR_ERROR_INVALID_FILE: return "INVALID_FILE";
-    // case TINYEXR_ERROR_INVALID_PARAMETER: return "INVALID_PARAMETER";
-    case TINYEXR_ERROR_CANT_OPEN_FILE: return "CANT_OPEN_FILE";
-    case TINYEXR_ERROR_UNSUPPORTED_FORMAT: return "UNSUPPORTED_FORMAT";
-    case TINYEXR_ERROR_INVALID_HEADER: return "INVALID_HEADER";
-    default: throw std::runtime_error("unknown tinyexr error");
-  }
-}
-
 // Return the preset type and the remaining filename
 static inline bool is_preset_filename(const string& filename) {
   return filename.find("::yocto::") == 0;
@@ -1857,19 +1841,25 @@ static inline pair<string, string> get_preset_type(const string& filename) {
   }
 }
 
-static inline void load_image_preset(
+static inline imageio_result load_image_preset(
     const string& filename, image<vec4f>& img) {
+  try {
   auto [type, nfilename] = get_preset_type(filename);
   img.resize({1024, 1024});
   if (type == "images2") img.resize({2048, 1024});
   make_image_preset(img, type);
+  return imageio_ok();
+  } catch(std::exception& e) {
+    return imageio_error(e.what());
+  }
 }
-static inline void load_image_preset(
+static inline imageio_result load_image_preset(
     const string& filename, image<vec4b>& img) {
   auto imgf = image<vec4f>{};
-  load_image_preset(filename, imgf);
+  if(auto err = load_image_preset(filename, imgf); !err) return err;
   img.resize(imgf.size());
   rgb_to_srgb(img, imgf);
+  return imageio_ok();
 }
 
 // Check if an image is HDR based on filename.
@@ -1879,14 +1869,7 @@ bool is_hdr_filename(const string& filename) {
 }
 
 // Loads an hdr image.
-image<vec4f> load_image(const string& filename) {
-  auto img = image<vec4f>{};
-  load_image(filename, img);
-  return img;
-}
-
-// Loads an hdr image.
-void load_image(const string& filename, image<vec4f>& img) {
+imageio_result load_image(const string& filename, image<vec4f>& img) {
   if (is_preset_filename(filename)) return load_image_preset(filename, img);
   auto ext = fs::path(filename).extension().string();
   if (ext == ".exr" || ext == ".EXR") {
@@ -1895,100 +1878,109 @@ void load_image(const string& filename, image<vec4f>& img) {
     if (auto error = LoadEXR(
             &pixels, &width, &height, filename.c_str(), nullptr);
         error < 0)
-      throw std::runtime_error("error loading image " + filename + "("s +
-                               get_tinyexr_error(error) + ")"s);
-    if (!pixels) throw std::runtime_error("error loading image " + filename);
+      return imageio_error("error loading image " + filename);
+    if (!pixels) return imageio_error("error loading image " + filename);
     img = image{{width, height}, (const vec4f*)pixels};
     free(pixels);
+    return imageio_ok();
   } else if (ext == ".pfm" || ext == ".PFM") {
     auto width = 0, height = 0, ncomp = 0;
     auto pixels = load_pfm(filename.c_str(), &width, &height, &ncomp, 4);
-    if (!pixels) throw std::runtime_error("error loading image " + filename);
+    if (!pixels) return imageio_error("error loading image " + filename);
     img = image{{width, height}, (const vec4f*)pixels};
     delete[] pixels;
+    return imageio_ok();
   } else if (ext == ".hdr" || ext == ".HDR") {
     auto width = 0, height = 0, ncomp = 0;
     auto pixels = stbi_loadf(filename.c_str(), &width, &height, &ncomp, 4);
-    if (!pixels) throw std::runtime_error("error loading image " + filename);
+    if (!pixels) return imageio_error("error loading image " + filename);
     img = image{{width, height}, (const vec4f*)pixels};
     free(pixels);
+    return imageio_ok();
   } else if (!is_hdr_filename(filename)) {
-    img = srgb_to_rgb(load_imageb(filename));
+    auto imgb = image<vec4b>{};
+    if(auto err = load_imageb(filename, imgb); !err) return err;
+    srgb_to_rgb(img, imgb);
+    return imageio_ok();
   } else {
-    throw std::runtime_error("unsupported image format " + ext);
+    return imageio_error("unsupported image format " + ext);
   }
 }
 
 // Saves an hdr image.
-void save_image(const string& filename, const image<vec4f>& img) {
+imageio_result save_image(const string& filename, const image<vec4f>& img) {
   auto ext = fs::path(filename).extension().string();
   if (ext == ".hdr" || ext == ".HDR") {
     if (!stbi_write_hdr(filename.c_str(), img.size().x, img.size().y, 4,
             (float*)img.data()))
-      throw std::runtime_error("error saving image " + filename);
+      return imageio_error("error saving image " + filename);
+    return imageio_ok();
   } else if (ext == ".pfm" || ext == ".PFM") {
     if (!save_pfm(filename.c_str(), img.size().x, img.size().y, 4,
             (float*)img.data()))
-      throw std::runtime_error("error saving image " + filename);
+      return imageio_error("error saving image " + filename);
+    return imageio_ok();
   } else if (ext == ".exr" || ext == ".EXR") {
     if (SaveEXR((float*)img.data(), img.size().x, img.size().y, 4,
             filename.c_str()) < 0)
-      throw std::runtime_error("error saving image " + filename);
+      return imageio_error("error saving image " + filename);
+    return imageio_ok();
   } else if (!is_hdr_filename(filename)) {
-    save_imageb(filename, rgb_to_srgbb(img));
+    return save_imageb(filename, rgb_to_srgbb(img));
   } else {
-    throw std::runtime_error("unsupported image format " + ext);
+    return imageio_error("unsupported image format " + ext);
   }
 }
 
 // Loads an ldr image.
-image<vec4b> load_imageb(const string& filename) {
-  auto img = image<vec4b>{};
-  load_imageb(filename, img);
-  return img;
-}
-
-// Loads an ldr image.
-void load_imageb(const string& filename, image<vec4b>& img) {
+imageio_result load_imageb(const string& filename, image<vec4b>& img) {
   if (is_preset_filename(filename)) return load_image_preset(filename, img);
   auto ext = fs::path(filename).extension().string();
   if (ext == ".png" || ext == ".PNG" || ext == ".jpg" || ext == ".JPG" ||
       ext == ".tga" || ext == ".TGA" || ext == ".bmp" || ext == ".BMP") {
     auto width = 0, height = 0, ncomp = 0;
     auto pixels = stbi_load(filename.c_str(), &width, &height, &ncomp, 4);
-    if (!pixels) throw std::runtime_error("error loading image " + filename);
+    if (!pixels) return imageio_error("error loading image " + filename);
     img = image{{width, height}, (const vec4b*)pixels};
     free(pixels);
+    return imageio_ok();
   } else if (is_hdr_filename(filename)) {
-    img = rgb_to_srgbb(load_image(filename));
+    auto imgf = image<vec4f>{};
+    if(auto err = load_image(filename, imgf); !err) return err;
+    img = rgb_to_srgbb(imgf);
+    return imageio_ok();
   } else {
-    throw std::runtime_error("unsupported image format " + ext);
+    return imageio_error("unsupported image format " + ext);
   }
 }
 
 // Saves an ldr image.
-void save_imageb(const string& filename, const image<vec4b>& img) {
+imageio_result save_imageb(const string& filename, const image<vec4b>& img) {
   auto ext = fs::path(filename).extension().string();
   if (ext == ".png" || ext == ".PNG") {
     if (!stbi_write_png(filename.c_str(), img.size().x, img.size().y, 4,
             img.data(), img.size().x * 4))
-      throw std::runtime_error("error saving image " + filename);
+      return imageio_error("error saving image " + filename);
+    return imageio_ok();
   } else if (ext == ".jpg" || ext == ".JPG") {
     if (!stbi_write_jpg(
             filename.c_str(), img.size().x, img.size().y, 4, img.data(), 75))
-      throw std::runtime_error("error saving image " + filename);
+      return imageio_error("error saving image " + filename);
+    return imageio_ok();
   } else if (ext == ".tga" || ext == ".TGA") {
     if (!stbi_write_tga(
             filename.c_str(), img.size().x, img.size().y, 4, img.data()))
-      throw std::runtime_error("error saving image " + filename);
+      return imageio_error("error saving image " + filename);
+    return imageio_ok();
   } else if (ext == ".bmp" || ext == ".BMP") {
     if (!stbi_write_bmp(
             filename.c_str(), img.size().x, img.size().y, 4, img.data()))
-      throw std::runtime_error("error saving image " + filename);
+      return imageio_error("error saving image " + filename);
+    return imageio_ok();
   } else if (is_hdr_filename(filename)) {
-    save_image(filename, srgb_to_rgb(img));
+    return save_image(filename, srgb_to_rgb(img));
   } else {
-    throw std::runtime_error("unsupported image format " + ext);
+    return imageio_error("unsupported image format " + ext);
   }
 }
 

@@ -280,9 +280,9 @@ void load_texture(yocto_texture& texture, const string& dirname) {
     texture.uri = nfilename;
   } else {
     if (is_hdr_filename(texture.uri)) {
-      load_image(fs::path(dirname) / texture.uri, texture.hdr);
+      if(!load_image(fs::path(dirname) / texture.uri, texture.hdr)) throw std::runtime_error("cannot load " + texture.uri);
     } else {
-      load_imageb(fs::path(dirname) / texture.uri, texture.ldr);
+      if(!load_imageb(fs::path(dirname) / texture.uri, texture.ldr)) throw std::runtime_error("cannot load " + texture.uri);
     }
   }
 }
@@ -338,9 +338,9 @@ void load_textures(
 
 void save_texture(const yocto_texture& texture, const string& dirname) {
   if (!texture.hdr.empty()) {
-    save_image(fs::path(dirname) / texture.uri, texture.hdr);
+    if(!save_image(fs::path(dirname) / texture.uri, texture.hdr)) throw std::runtime_error("cannot save " + texture.uri);
   } else {
-    save_imageb(fs::path(dirname) / texture.uri, texture.ldr);
+    if(!save_imageb(fs::path(dirname) / texture.uri, texture.ldr)) throw std::runtime_error("cannot save " + texture.uri);
   }
 }
 

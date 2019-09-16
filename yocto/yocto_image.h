@@ -298,16 +298,23 @@ void difference(image<vec4f>& diff, const image<vec4f>& a,
 // -----------------------------------------------------------------------------
 namespace yocto {
 
+// Result of file io operations.
+struct [[nodiscard]] imageio_result {
+  bool   ok      = true;
+  string message = "";
+         operator bool() const { return ok; }
+};
+inline imageio_result imageio_ok() { return imageio_result{}; }
+inline imageio_result imageio_error(const string& err) { return {false, err}; }
+
 // Check if an image is HDR based on filename.
 bool is_hdr_filename(const string& filename);
 
 // Loads/saves a 4 channels float/byte image in linear color space.
-image<vec4f> load_image(const string& filename);
-void         load_image(const string& filename, image<vec4f>& img);
-void         save_image(const string& filename, const image<vec4f>& img);
-image<vec4b> load_imageb(const string& filename);
-void         load_imageb(const string& filename, image<vec4b>& img);
-void         save_imageb(const string& filename, const image<vec4b>& img);
+imageio_result load_image(const string& filename, image<vec4f>& img);
+imageio_result save_image(const string& filename, const image<vec4f>& img);
+imageio_result load_imageb(const string& filename, image<vec4b>& img);
+imageio_result save_imageb(const string& filename, const image<vec4b>& img);
 
 }  // namespace yocto
 

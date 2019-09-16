@@ -454,9 +454,9 @@ void load_element(
   if (type == typeid(yocto_texture)) {
     auto& texture = scene.textures[index];
     if (is_hdr_filename(texture.uri)) {
-      load_image(fs::path(filename).parent_path() / texture.uri, texture.hdr);
+      if(!load_image(fs::path(filename).parent_path() / texture.uri, texture.hdr)) throw std::runtime_error("cannot load " + texture.uri);
     } else {
-      load_imageb(fs::path(filename).parent_path() / texture.uri, texture.ldr);
+      if(!load_imageb(fs::path(filename).parent_path() / texture.uri, texture.ldr)) throw std::runtime_error("cannot load " + texture.uri);
     }
   } else if (type == typeid(yocto_voltexture)) {
     auto& texture = scene.voltextures[index];
@@ -782,9 +782,9 @@ void update(const opengl_window& win, app_state& app) {
         log_glinfo(win, "start saving " + scn.imagename);
         task.result = std::async(std::launch::async, [&scn]() {
           if (is_hdr_filename(scn.imagename)) {
-            save_image(scn.imagename, scn.render);
+            if(!save_image(scn.imagename, scn.render)) throw std::runtime_error("cannot save " + scn.imagename);
           } else {
-            save_imageb(scn.imagename, tonemapb(scn.render, scn.tonemap_prms));
+            if(!save_imageb(scn.imagename, tonemapb(scn.render, scn.tonemap_prms))) throw std::runtime_error("cannot save " + scn.imagename);
           }
         });
       } break;
