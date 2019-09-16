@@ -1288,7 +1288,7 @@ bool write_obj_command(file_wrapper& fs, obj_command command,
       return fprintf(fs.fs, "vn %g  %g %g\n", value.vec3.x, value.vec3.y,
                  value.vec3.z) >= 0;
     case obj_command::texcoord:
-      return fprintf(fs.fs, "vt %g %g\n", value.vec2.x, value.vec2.x) >= 0;
+      return fprintf(fs.fs, "vt %g %g\n", value.vec2.x, value.vec2.y) >= 0;
     case obj_command::face:
     case obj_command::line:
     case obj_command::point:
