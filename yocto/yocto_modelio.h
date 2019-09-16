@@ -463,29 +463,29 @@ void write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
     bool texture_as_float = false);
 
 // type-cheked pbrt value access
-void get_pbrt_value(const pbrt_value& pbrt, string& value);
-void get_pbrt_value(const pbrt_value& pbrt, bool& value);
-void get_pbrt_value(const pbrt_value& pbrt, int& value);
-void get_pbrt_value(const pbrt_value& pbrt, float& value);
-void get_pbrt_value(const pbrt_value& pbrt, vec2f& value);
-void get_pbrt_value(const pbrt_value& pbrt, vec3f& value);
-void get_pbrt_value(const pbrt_value& pbrt, vector<float>& value);
-void get_pbrt_value(const pbrt_value& pbrt, vector<vec2f>& value);
-void get_pbrt_value(const pbrt_value& pbrt, vector<vec3f>& value);
-void get_pbrt_value(const pbrt_value& pbrt, vector<int>& value);
-void get_pbrt_value(const pbrt_value& pbrt, vector<vec3i>& value);
-void get_pbrt_value(const pbrt_value& pbrt, pair<float, string>& value);
-void get_pbrt_value(const pbrt_value& pbrt, pair<vec3f, string>& value);
+bool get_pbrt_value(const pbrt_value& pbrt, string& value);
+bool get_pbrt_value(const pbrt_value& pbrt, bool& value);
+bool get_pbrt_value(const pbrt_value& pbrt, int& value);
+bool get_pbrt_value(const pbrt_value& pbrt, float& value);
+bool get_pbrt_value(const pbrt_value& pbrt, vec2f& value);
+bool get_pbrt_value(const pbrt_value& pbrt, vec3f& value);
+bool get_pbrt_value(const pbrt_value& pbrt, vector<float>& value);
+bool get_pbrt_value(const pbrt_value& pbrt, vector<vec2f>& value);
+bool get_pbrt_value(const pbrt_value& pbrt, vector<vec3f>& value);
+bool get_pbrt_value(const pbrt_value& pbrt, vector<int>& value);
+bool get_pbrt_value(const pbrt_value& pbrt, vector<vec3i>& value);
+bool get_pbrt_value(const pbrt_value& pbrt, pair<float, string>& value);
+bool get_pbrt_value(const pbrt_value& pbrt, pair<vec3f, string>& value);
 template <typename T>
-inline void get_pbrt_value(
+inline bool get_pbrt_value(
     const vector<pbrt_value>& pbrt, const string& name, T& value, T def) {
   for (auto& p : pbrt) {
     if (p.name == name) {
-      get_pbrt_value(p, value);
-      return;
+      return get_pbrt_value(p, value);
     }
   }
   value = def;
+  return true;
 }
 template <typename T>
 inline T get_pbrt_value(
