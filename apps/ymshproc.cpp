@@ -78,7 +78,7 @@ int main(int argc, const char** argv) {
           shape.positions, shape.normals, shape.texcoords, shape.colors,
           shape.radius, facevarying))
     print_fatal("cannot load " + filename);
-  load_timer.stop();
+  load_timer.done();
 
   // transform
   if (uscale != 1) scale *= uscale;
@@ -124,7 +124,7 @@ int main(int argc, const char** argv) {
           shape.positions, shape.normals, shape.texcoords, shape.colors,
           shape.radius))
     print_fatal("cannot save " + output);
-  save_timer.stop();
+  save_timer.done();
 
   // done
   return 0;

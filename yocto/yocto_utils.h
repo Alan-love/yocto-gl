@@ -242,11 +242,12 @@ struct scoped_timer {
   int64_t start_time = -1;
   scoped_timer() {}
   scoped_timer(int64_t start) : start_time{start} {}
-  void stop() {
+  void done() {
     if (start_time >= 0)
       printf(" in %s\n", format_duration(get_time() - start_time).c_str());
+    start_time = -1;
   }
-  ~scoped_timer() { stop(); }
+  ~scoped_timer() { done(); }
 };
 inline auto print_timed(const string& msg) {
   printf("%s", msg.c_str());

@@ -112,42 +112,37 @@ int main(int argc, const char* argv[]) {
   }
 
   // scene loading
-  auto scene = yocto_scene{};
-  try {
-    auto timer = print_timed("loading scene");
-    load_scene(filename, scene, load_prms);
-  } catch (const std::exception& e) {
-    print_fatal(e.what());
-  }
+  auto scene      = yocto_scene{};
+  auto load_timer = print_timed("loading scene");
+  if (!load_scene(filename, scene, load_prms))
+    print_fatal("cannot load scene " + filename);
+  load_timer.done();
 
   // tesselate
-  {
-    auto timer = print_timed("tesselating");
-    tesselate_subdivs(scene);
-  }
+  auto tesselate_timer = print_timed("tesselating");
+  tesselate_subdivs(scene);
+  tesselate_timer.done();
 
   // add components
   if (validate) {
-    auto timer = print_timed("validating");
+    auto validate_timer = print_timed("validating");
     print_validation(scene);
+    validate_timer.done();
   }
 
   // add sky
   if (add_skyenv) add_sky(scene);
 
   // build bvh
+  auto bvh_timer = print_timed("building bvh");
   auto bvh = bvh_scene{};
-  {
-    auto timer = print_timed("building bvh");
-    make_bvh(bvh, scene, bvh_prms);
-  }
+  make_bvh(bvh, scene, bvh_prms);
+  bvh_timer.done();
 
   // init renderer
-  auto lights = trace_lights{};
-  {
-    auto timer = print_timed("building lights");
-    make_trace_lights(lights, scene);
-  }
+  auto lights_timer = print_timed("building lights");
+  auto lights = make_trace_lights(scene);
+  lights_timer.done();
 
   // fix renderer type if no lights
   if (lights.instances.empty() && lights.environments.empty() &&
@@ -166,7 +161,7 @@ int main(int argc, const char* argv[]) {
   for (auto sample = 0; sample < trace_prms.samples;
        sample += trace_prms.batch) {
     auto nsamples = min(trace_prms.batch, trace_prms.samples - sample);
-    auto timer    = print_timed("rendering samples " + std::to_string(sample) +
+    auto batch_timer    = print_timed("rendering samples " + std::to_string(sample) +
                              "/" + std::to_string(trace_prms.samples));
     trace_samples(render, state, scene, bvh, lights, sample, trace_prms);
     if (save_batch) {
@@ -188,7 +183,7 @@ int main(int argc, const char* argv[]) {
   }
 
   // save image
-  auto timer = print_timed("saving image");
+  auto save_timer = print_timed("saving image");
   if (is_hdr_filename(imfilename)) {
     if (!save_image(imfilename, logo ? add_logo(render) : render))
       print_fatal("cannot save " + imfilename);
@@ -197,6 +192,7 @@ int main(int argc, const char* argv[]) {
                                       : tonemapb(render, tonemap_prms)))
       print_fatal("cannot save " + imfilename);
   }
+  save_timer.done();
 
   // done
   return 0;

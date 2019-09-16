@@ -464,7 +464,8 @@ void load_element(
     }
   } else if (type == typeid(yocto_voltexture)) {
     auto& texture = scene.voltextures[index];
-    if(!load_volume(fs::path(filename).parent_path() / texture.uri, texture.vol)) 
+    if (!load_volume(
+            fs::path(filename).parent_path() / texture.uri, texture.vol))
       throw std::runtime_error("cannot load " + texture.uri);
   } else if (type == typeid(yocto_shape)) {
     auto& shape = scene.shapes[index];
@@ -754,7 +755,7 @@ void update(const opengl_window& win, app_state& app) {
         scn.bvh_done    = false;
         scn.lights_done = false;
         task.result     = std::async(std::launch::async, [&scn]() {
-          if(!load_scene(scn.filename, scn.scene, scn.load_prms))
+          if (!load_scene(scn.filename, scn.scene, scn.load_prms))
             throw std::runtime_error("cannot load scene " + scn.filename);
           tesselate_subdivs(scn.scene);
           if (scn.add_skyenv) add_sky(scn.scene);
@@ -801,9 +802,10 @@ void update(const opengl_window& win, app_state& app) {
       } break;
       case app_task_type::save_scene: {
         log_glinfo(win, "start saving " + scn.outname);
-        task.result = std::async(std::launch::async,
-            [&scn]() { if(!save_scene(scn.outname, scn.scene, scn.save_prms)) 
-                        throw std::runtime_error("cannot save " + scn.outname); });
+        task.result = std::async(std::launch::async, [&scn]() {
+          if (!save_scene(scn.outname, scn.scene, scn.save_prms))
+            throw std::runtime_error("cannot save " + scn.outname);
+        });
       } break;
       case app_task_type::render_image: {
         log_glinfo(win, "start rendering " + scn.filename);

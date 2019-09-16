@@ -566,9 +566,9 @@ sceneio_result save_shapes(const yocto_scene& scene, const string& dirname,
         [&dirname, &scene, &result](int idx) {
           if (sceneio_result err = result; !err) return;
           auto& shape = scene.shapes[idx];
-          auto err = save_shape(shape, dirname);
-          if(!err)result = sceneio_result{
-                sceneio_status::bad_shape, 0, {}, err, idx};
+          auto  err   = save_shape(shape, dirname);
+          if (!err)
+            result = sceneio_result{sceneio_status::bad_shape, 0, {}, err, idx};
         },
         params.cancel);
     parallel_for(
@@ -576,8 +576,9 @@ sceneio_result save_shapes(const yocto_scene& scene, const string& dirname,
         [&dirname, &scene, &result](int idx) {
           if (sceneio_result err = result; !err) return;
           auto& subdiv = scene.subdivs[idx];
-          auto err = save_subdiv(subdiv, dirname);
-          if(!err)result = sceneio_result{
+          auto  err    = save_subdiv(subdiv, dirname);
+          if (!err)
+            result = sceneio_result{
                 sceneio_status::bad_subdiv, 0, {}, err, idx};
         },
         params.cancel);
@@ -596,7 +597,7 @@ static sceneio_result load_yaml(
     const string& filename, yocto_scene& scene, const load_params& params) {
   // open file
   auto fs = open_file(filename);
-  if(!fs) return {sceneio_status::file_not_found};
+  if (!fs) return {sceneio_status::file_not_found};
 
   // TODO: remove throws
 
@@ -864,12 +865,12 @@ static sceneio_result load_yaml_scene(
   scene = {};
 
   // Parse yaml
-  if(auto err = load_yaml(filename, scene, params); !err) return err;
+  if (auto err = load_yaml(filename, scene, params); !err) return err;
 
   // load shape and textures
   auto dirname = fs::path(filename).parent_path();
-  if(auto err = load_shapes(scene, dirname, params); !err) return err;
-  if(auto err = load_textures(scene, dirname, params); !err) return err;
+  if (auto err = load_shapes(scene, dirname, params); !err) return err;
+  if (auto err = load_textures(scene, dirname, params); !err) return err;
 
   // fix scene
   scene.uri = fs::path(filename).filename();
@@ -884,11 +885,12 @@ static sceneio_result load_yaml_scene(
 }
 
 // Save yaml
-static sceneio_result save_yaml(const string& filename, const yocto_scene& scene,
-    bool ply_instances = false, const string& instances_name = "") {
+static sceneio_result save_yaml(const string& filename,
+    const yocto_scene& scene, bool ply_instances = false,
+    const string& instances_name = "") {
   // open file
   auto fs = open_file(filename, "w");
-  if(!fs) return {sceneio_status::file_not_found};
+  if (!fs) return {sceneio_status::file_not_found};
 
   write_yaml_comment(fs, get_save_scene_message(scene, ""));
 
@@ -1094,12 +1096,12 @@ static sceneio_result save_yaml(const string& filename, const yocto_scene& scene
 static sceneio_result save_yaml_scene(const string& filename,
     const yocto_scene& scene, const save_params& params) {
   // save yaml file
-  if(auto err = save_yaml(filename, scene); !err) return err;
+  if (auto err = save_yaml(filename, scene); !err) return err;
 
   // save meshes and textures
   auto dirname = fs::path(filename).parent_path();
-  if(auto err = save_shapes(scene, dirname, params); !err) return err;
-  if(auto err = save_textures(scene, dirname, params); !err) return err;
+  if (auto err = save_shapes(scene, dirname, params); !err) return err;
+  if (auto err = save_textures(scene, dirname, params); !err) return err;
 
   return {sceneio_status::ok};
 }
@@ -1118,7 +1120,7 @@ static sceneio_result load_mtl(const string& filename, yocto_scene& scene,
   // open file
   auto fs = open_file(filename);
   // TODO: can we better here
-  if(!fs) return {sceneio_status::file_not_found};
+  if (!fs) return {sceneio_status::file_not_found};
 
   // parsing type
   enum struct parsing_type { none, material };
@@ -1248,7 +1250,7 @@ static sceneio_result load_objx(const string& filename, yocto_scene& scene,
     const load_params&                        params) {
   // open file
   auto fs = open_file(filename);
-  if(!fs) return {sceneio_status::file_not_found};
+  if (!fs) return {sceneio_status::file_not_found};
 
   // parsing types
   enum struct parsing_type { none, camera, environment, instance, procedural };
@@ -1529,7 +1531,7 @@ static sceneio_result load_obj(
 
   // open file
   auto fs = open_file(filename);
-  if(!fs) return {sceneio_status::file_not_found};
+  if (!fs) return {sceneio_status::file_not_found};
 
   // load obj elements
   auto command   = obj_command{};
@@ -1648,8 +1650,8 @@ static sceneio_result load_obj(
       if (std::find(mlibs.begin(), mlibs.end(), name) != mlibs.end()) continue;
       mlibs.push_back(name);
       auto mtlpath = fs::path(filename).parent_path() / name;
-      auto merr = load_mtl(mtlpath, scene, mmap, tmap, params);
-      if(!merr) return merr;
+      auto merr    = load_mtl(mtlpath, scene, mmap, tmap, params);
+      if (!merr) return merr;
     } else {
       // skip all other commands
     }
@@ -1699,12 +1701,12 @@ static sceneio_result load_obj_scene(
 
   // Parse obj
   auto merr = load_obj(filename, scene, params);
-  if(!merr) return merr;
+  if (!merr) return merr;
 
   // load textures
   auto dirname = fs::path(filename).parent_path();
-  auto terr = load_textures(scene, dirname, params);
-  if(terr) return terr;
+  auto terr    = load_textures(scene, dirname, params);
+  if (terr) return terr;
 
   // fix scene
   scene.uri = fs::path(filename).filename();
@@ -1722,7 +1724,7 @@ static sceneio_result save_obj(const string& filename, const yocto_scene& scene,
     bool preserve_instances, bool flip_texcoord = true) {
   // open writer
   auto fs = open_file(filename, "w");
-  if(!fs) return {sceneio_status::file_not_found};
+  if (!fs) return {sceneio_status::file_not_found};
 
   // stats
   write_obj_comment(fs, get_save_scene_message(scene, ""));
@@ -1842,11 +1844,12 @@ static sceneio_result save_obj(const string& filename, const yocto_scene& scene,
   return {sceneio_status::ok};
 }
 
-static sceneio_result save_mtl(const string& filename, const yocto_scene& scene) {
+static sceneio_result save_mtl(
+    const string& filename, const yocto_scene& scene) {
   // open writer
   auto fs = open_file(filename, "w");
   // TODO: can we do better here
-  if(!fs) return {sceneio_status::file_not_found};
+  if (!fs) return {sceneio_status::file_not_found};
 
   // stats
   write_obj_comment(fs, get_save_scene_message(scene, ""));
@@ -1914,7 +1917,7 @@ static sceneio_result save_objx(
   // open writer
   auto fs = open_file(filename, "w");
   // TODO: can we do better here
-  if(!fs) return {sceneio_status::file_not_found};
+  if (!fs) return {sceneio_status::file_not_found};
 
   // stats
   write_obj_comment(fs, get_save_scene_message(scene, ""));
@@ -1966,18 +1969,24 @@ static sceneio_result save_objx(
 
 static sceneio_result save_obj_scene(const string& filename,
     const yocto_scene& scene, const save_params& params) {
-  if(auto err = save_obj(filename, scene, params.objinstances, true); !err) return err;
+  if (auto err = save_obj(filename, scene, params.objinstances, true); !err)
+    return err;
 
   if (!scene.materials.empty())
-    if(auto err = save_mtl(fs::path(filename).replace_extension(".mtl"), scene); !err) return err;
+    if (auto err = save_mtl(
+            fs::path(filename).replace_extension(".mtl"), scene);
+        !err)
+      return err;
 
   if (!scene.cameras.empty() || !scene.cameras.empty() ||
       (!scene.instances.empty() && params.objinstances))
-    if(auto err = save_objx(fs::path(filename).replace_extension(".objx"), scene,
-        params.objinstances); !err) return err;
+    if (auto err = save_objx(fs::path(filename).replace_extension(".objx"),
+            scene, params.objinstances);
+        !err)
+      return err;
   auto dirname = fs::path(filename).parent_path();
 
-  if(auto err = save_textures(scene, dirname, params); !err) return err;
+  if (auto err = save_textures(scene, dirname, params); !err) return err;
 
   return {sceneio_status::ok};
 }
@@ -2005,11 +2014,11 @@ static sceneio_result load_ply_scene(
   // load ply mesh
   scene.shapes.push_back({});
   auto& shape = scene.shapes.back();
-  auto err = load_shape(filename, shape.points, shape.lines, shape.triangles,
-          shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
-          shape.positions, shape.normals, shape.texcoords, shape.colors,
-          shape.radius, false);
-  if(!err) {
+  auto  err   = load_shape(filename, shape.points, shape.lines, shape.triangles,
+      shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
+      shape.positions, shape.normals, shape.texcoords, shape.colors,
+      shape.radius, false);
+  if (!err) {
     // TODO: do better here
     return {sceneio_status::io_error};
   }
@@ -2038,11 +2047,11 @@ static sceneio_result save_ply_scene(const string& filename,
     throw std::runtime_error("cannot save empty scene " + filename);
   }
   auto& shape = scene.shapes.front();
-  auto err = save_shape(filename, shape.points, shape.lines, shape.triangles,
-          shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
-          shape.positions, shape.normals, shape.texcoords, shape.colors,
-          shape.radius);
-  if(!err) {
+  auto  err   = save_shape(filename, shape.points, shape.lines, shape.triangles,
+      shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
+      shape.positions, shape.normals, shape.texcoords, shape.colors,
+      shape.radius);
+  if (!err) {
     // TODO: do better here
     return {sceneio_status::io_error};
   }
@@ -2058,7 +2067,8 @@ static sceneio_result save_ply_scene(const string& filename,
 namespace yocto {
 
 // convert gltf to scene
-static sceneio_result gltf_to_scene(const string& filename, yocto_scene& scene) {
+static sceneio_result gltf_to_scene(
+    const string& filename, yocto_scene& scene) {
   // load gltf
   auto params = cgltf_options{};
   memset(&params, 0, sizeof(params));
@@ -2530,11 +2540,11 @@ static sceneio_result load_gltf_scene(
   scene = {};
 
   // load gltf
-  if(auto err = gltf_to_scene(filename, scene); !err) return err;
+  if (auto err = gltf_to_scene(filename, scene); !err) return err;
 
   // load textures
   auto dirname = fs::path(filename).parent_path();
-  if(auto err = load_textures(scene, dirname, params); !err) return err;
+  if (auto err = load_textures(scene, dirname, params); !err) return err;
 
   // fix scene
   scene.uri = fs::path(filename).filename();
@@ -2692,7 +2702,8 @@ static inline void write_json_end(write_json_state& state) {
 }
 
 // convert gltf scene to json
-static sceneio_result save_gltf(const string& filename, const yocto_scene& scene) {
+static sceneio_result save_gltf(
+    const string& filename, const yocto_scene& scene) {
   // shapes
   struct gltf_shape {
     string        uri       = "";
@@ -3021,12 +3032,12 @@ static sceneio_result save_gltf(const string& filename, const yocto_scene& scene
 // Save gltf json
 static sceneio_result save_gltf_scene(const string& filename,
     const yocto_scene& scene, const save_params& params) {
-    // save json
-    if(auto err = save_gltf(filename, scene); !err) return err;
+  // save json
+  if (auto err = save_gltf(filename, scene); !err) return err;
 
-    // save textures
-    auto dirname = fs::path(filename).parent_path();
-    if(auto err = save_textures(scene, dirname, params); !err) return err;
+  // save textures
+  auto dirname = fs::path(filename).parent_path();
+  if (auto err = save_textures(scene, dirname, params); !err) return err;
 
   return {sceneio_status::ok};
 }
@@ -3947,10 +3958,11 @@ static sceneio_result load_pbrt_scene(
 }
 
 // Convert a scene to pbrt format
-static sceneio_result save_pbrt(const string& filename, const yocto_scene& scene) {
+static sceneio_result save_pbrt(
+    const string& filename, const yocto_scene& scene) {
   // open file
   auto fs = open_file(filename, "w");
-  if(!fs) return {sceneio_status::file_not_found};
+  if (!fs) return {sceneio_status::file_not_found};
 
   // embed data
   write_pbrt_comment(fs, get_save_scene_message(scene, ""));
@@ -4035,23 +4047,22 @@ static sceneio_result save_pbrt(const string& filename, const yocto_scene& scene
 // Save a pbrt scene
 static sceneio_result save_pbrt_scene(const string& filename,
     const yocto_scene& scene, const save_params& params) {
-    // save json
-    if(auto err = save_pbrt(filename, scene); !err) return err;
+  // save json
+  if (auto err = save_pbrt(filename, scene); !err) return err;
 
-    // save meshes
-    auto dirname = fs::path(filename).parent_path();
-    for (auto idx = 0; idx < scene.shapes.size(); idx++) {
-      auto& shape = scene.shapes[idx];
-      auto err = save_shape((dirname / shape.uri).replace_extension(".ply"),
-              shape.points, shape.lines, shape.triangles, shape.quads,
-              shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
-              shape.positions, shape.normals, shape.texcoords, shape.colors,
-              shape.radius);
-      if(!err) return {sceneio_status::bad_shape, 0, {}, err, idx};
-    }
+  // save meshes
+  auto dirname = fs::path(filename).parent_path();
+  for (auto idx = 0; idx < scene.shapes.size(); idx++) {
+    auto& shape = scene.shapes[idx];
+    auto  err   = save_shape((dirname / shape.uri).replace_extension(".ply"),
+        shape.points, shape.lines, shape.triangles, shape.quads, shape.quadspos,
+        shape.quadsnorm, shape.quadstexcoord, shape.positions, shape.normals,
+        shape.texcoords, shape.colors, shape.radius);
+    if (!err) return {sceneio_status::bad_shape, 0, {}, err, idx};
+  }
 
-    // save textures
-    if(auto err = save_textures(scene, dirname, params); !err) return err;
+  // save textures
+  if (auto err = save_textures(scene, dirname, params); !err) return err;
 
   return {sceneio_status::ok};
 }
