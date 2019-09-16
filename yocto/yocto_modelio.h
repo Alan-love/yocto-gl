@@ -156,23 +156,23 @@ struct ply_element {
   vector<ply_property> properties = {};
 };
 
-// Read Ply functions
-void read_ply_header(file_wrapper& fs, ply_format& format,
+// Read Ply functions. Returns false on error.
+[[nodiscard]] bool read_ply_header(file_wrapper& fs, ply_format& format,
     vector<ply_element>& elements, vector<string>& comments);
-void read_ply_value(file_wrapper& fs, ply_format format,
+[[nodiscard]] bool read_ply_value(file_wrapper& fs, ply_format format,
     const ply_element& element, vector<double>& values,
     vector<vector<double>>& lists);
-void read_ply_value(file_wrapper& fs, ply_format format,
+[[nodiscard]] bool read_ply_value(file_wrapper& fs, ply_format format,
     const ply_element& element, vector<float>& values,
     vector<vector<int>>& lists);
 
-// Write Ply functions
-void write_ply_header(file_wrapper& fs, ply_format format,
+// Write Ply functions. Returns false on error.
+[[nodiscard]] bool write_ply_header(file_wrapper& fs, ply_format format,
     const vector<ply_element>& elements, const vector<string>& comments);
-void write_ply_value(file_wrapper& fs, ply_format format,
+[[nodiscard]] bool write_ply_value(file_wrapper& fs, ply_format format,
     const ply_element& element, vector<double>& values,
     vector<vector<double>>& lists);
-void write_ply_value(file_wrapper& fs, ply_format format,
+[[nodiscard]] bool write_ply_value(file_wrapper& fs, ply_format format,
     const ply_element& element, vector<float>& values,
     vector<vector<int>>& lists);
 
