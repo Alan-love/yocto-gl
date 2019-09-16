@@ -1409,45 +1409,45 @@ bool write_objx_command(file_wrapper& fs, objx_command command,
 }
 
 // typesafe access of obj value
-void get_obj_value(const obj_value& yaml, string& value) {
-  if (yaml.type != obj_value_type::string)
-    throw std::runtime_error("error parsing yaml value");
+bool get_obj_value(const obj_value& yaml, string& value) {
+  if (yaml.type != obj_value_type::string) return false;
   value = yaml.string_;
+  return true;
 }
-void get_obj_value(const obj_value& yaml, bool& value) {
-  if (yaml.type != obj_value_type::boolean)
-    throw std::runtime_error("error parsing yaml value");
+bool get_obj_value(const obj_value& yaml, bool& value) {
+  if (yaml.type != obj_value_type::boolean) return false;
   value = yaml.boolean;
+  return true;
 }
-void get_obj_value(const obj_value& yaml, int& value) {
-  if (yaml.type != obj_value_type::number)
-    throw std::runtime_error("error parsing yaml value");
+bool get_obj_value(const obj_value& yaml, int& value) {
+  if (yaml.type != obj_value_type::number) return false;
   value = (int)yaml.number;
+  return true;
 }
-void get_obj_value(const obj_value& yaml, float& value) {
-  if (yaml.type != obj_value_type::number)
-    throw std::runtime_error("error parsing yaml value");
+bool get_obj_value(const obj_value& yaml, float& value) {
+  if (yaml.type != obj_value_type::number) return false;
   value = (float)yaml.number;
+  return true;
 }
-void get_obj_value(const obj_value& yaml, vec2f& value) {
-  if (yaml.type != obj_value_type::array || yaml.number != 2)
-    throw std::runtime_error("error parsing yaml value");
+bool get_obj_value(const obj_value& yaml, vec2f& value) {
+  if (yaml.type != obj_value_type::array || yaml.number != 2) return false;
   value = {(float)yaml.array_[0], (float)yaml.array_[1]};
+  return true;
 }
-void get_obj_value(const obj_value& yaml, vec3f& value) {
-  if (yaml.type != obj_value_type::array || yaml.number != 3)
-    throw std::runtime_error("error parsing yaml value");
+bool get_obj_value(const obj_value& yaml, vec3f& value) {
+  if (yaml.type != obj_value_type::array || yaml.number != 3) return false;
   value = {(float)yaml.array_[0], (float)yaml.array_[1], (float)yaml.array_[2]};
+  return true;
 }
-void get_obj_value(const obj_value& yaml, mat3f& value) {
-  if (yaml.type != obj_value_type::array || yaml.number != 9)
-    throw std::runtime_error("error parsing yaml value");
+bool get_obj_value(const obj_value& yaml, mat3f& value) {
+  if (yaml.type != obj_value_type::array || yaml.number != 9) return false;
   for (auto i = 0; i < 9; i++) (&value.x.x)[i] = (float)yaml.array_[i];
+  return true;
 }
-void get_obj_value(const obj_value& yaml, frame3f& value) {
-  if (yaml.type != obj_value_type::array || yaml.number != 12)
-    throw std::runtime_error("error parsing yaml value");
+bool get_obj_value(const obj_value& yaml, frame3f& value) {
+  if (yaml.type != obj_value_type::array || yaml.number != 12) return false;
   for (auto i = 0; i < 12; i++) (&value.x.x)[i] = (float)yaml.array_[i];
+  return true;
 }
 
 // typesafe access of obj value

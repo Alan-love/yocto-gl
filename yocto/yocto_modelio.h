@@ -312,14 +312,14 @@ bool write_objx_command(file_wrapper& fs, objx_command command,
     const obj_value& value, const obj_texture_info& texture = {});
 
 // typesafe access of obj value
-void get_obj_value(const obj_value& yaml, string& value);
-void get_obj_value(const obj_value& yaml, bool& value);
-void get_obj_value(const obj_value& yaml, int& value);
-void get_obj_value(const obj_value& yaml, float& value);
-void get_obj_value(const obj_value& yaml, vec2f& value);
-void get_obj_value(const obj_value& yaml, vec3f& value);
-void get_obj_value(const obj_value& yaml, mat3f& value);
-void get_obj_value(const obj_value& yaml, frame3f& value);
+bool get_obj_value(const obj_value& yaml, string& value);
+bool get_obj_value(const obj_value& yaml, bool& value);
+bool get_obj_value(const obj_value& yaml, int& value);
+bool get_obj_value(const obj_value& yaml, float& value);
+bool get_obj_value(const obj_value& yaml, vec2f& value);
+bool get_obj_value(const obj_value& yaml, vec3f& value);
+bool get_obj_value(const obj_value& yaml, mat3f& value);
+bool get_obj_value(const obj_value& yaml, frame3f& value);
 
 // typesafe access of obj value
 obj_value make_obj_value(const string& value);

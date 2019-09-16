@@ -1510,6 +1510,10 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
 // Loads an OBJ
 static bool load_obj(const string& filename, yocto_scene& scene, string& error,
     const load_params& params) {
+  // errors
+  auto set_parse_error = [&]() { return set_sceneio_error(error, filename, false, "parse error"); };
+  auto set_type_error = [&]() { return set_sceneio_error(error, filename, false, "type mismatch"); };
+
   // current parsing values
   string mname = ""s;
   string oname = ""s;
@@ -1541,7 +1545,7 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
   bool facevarying_now = false;
 
   // Add  vertices to the current shape
-  auto add_verts = [&](const vector<obj_vertex>& verts, yocto_shape& shape) {
+  auto add_verts = [&](const vector<obj_vertex>& verts, yocto_shape& shape, string& error)  -> bool{
     for (auto& vert : verts) {
       auto it = vertex_map.find(vert);
       if (it != vertex_map.end()) continue;
@@ -1563,10 +1567,11 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
           shape.texcoords.push_back({0, 0});
       }
     }
+    return true;
   };
 
   // add vertex
-  auto add_fvverts = [&](const vector<obj_vertex>& verts, yocto_shape& shape) {
+  auto add_fvverts = [&](const vector<obj_vertex>& verts, yocto_shape& shape, string& error) -> bool {
     for (auto& vert : verts) {
       if (!vert.position) continue;
       auto pos_it = pos_map.find(vert.position);
@@ -1591,10 +1596,11 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
       norm_map.insert(norm_it, {vert.normal, nverts});
       shape.normals.push_back(onorm.at(vert.normal - 1));
     }
+    return true;
   };
 
   // add object if needed
-  auto add_shape = [&]() {
+  auto add_shape = [&](string& error)  -> bool {
     auto shape      = yocto_shape{};
     shape.uri       = oname + gname;
     facevarying_now = params.facevarying ||
@@ -1603,6 +1609,7 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
     auto instance     = yocto_instance{};
     instance.uri      = shape.uri;
     instance.shape    = (int)scene.shapes.size() - 1;
+    if(mmap.find(mname) == mmap.end()) return set_sceneio_error(error, filename, false, "missing material " + mname);
     instance.material = mmap.at(mname);
     scene.instances.push_back(instance);
     object_shapes[oname].push_back((int)scene.shapes.size() - 1);
@@ -1610,6 +1617,7 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
     pos_map.clear();
     norm_map.clear();
     texcoord_map.clear();
+    return true;
   };
 
   // open file
@@ -1622,23 +1630,25 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
   auto vertices  = vector<obj_vertex>{};
   auto vert_size = obj_vertex{};
   while (read_obj_command(fs, command, value, vertices, vert_size)) {
-    if (command == obj_command::vertex) {
-      get_obj_value(value, opos.emplace_back());
+    if (command == obj_command::error) {
+      return set_parse_error();
+    } else if (command == obj_command::vertex) {
+      if(!get_obj_value(value, opos.emplace_back()))return set_type_error();
     } else if (command == obj_command::normal) {
-      get_obj_value(value, onorm.emplace_back());
+      if(!get_obj_value(value, onorm.emplace_back()))return set_type_error();
     } else if (command == obj_command::texcoord) {
-      get_obj_value(value, otexcoord.emplace_back());
+      if(!get_obj_value(value, otexcoord.emplace_back()))return set_type_error();
       otexcoord.back().y = 1 - otexcoord.back().y;
     } else if (command == obj_command::face) {
-      if (scene.shapes.empty()) add_shape();
+      if (scene.shapes.empty()) if(!add_shape(error)) return false;
       if (!scene.shapes.back().positions.empty() &&
           (!scene.shapes.back().lines.empty() ||
               !scene.shapes.back().points.empty())) {
-        add_shape();
+        if(!add_shape(error)) return false;
       }
       auto& shape = scene.shapes.back();
       if (!facevarying_now) {
-        add_verts(vertices, shape);
+        if(!add_verts(vertices, shape, error)) return false;
         if (vertices.size() == 4) {
           shape.quads.push_back(
               {vertex_map.at(vertices[0]), vertex_map.at(vertices[1]),
@@ -1649,7 +1659,7 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
                 vertex_map.at(vertices[i - 1]), vertex_map.at(vertices[i])});
         }
       } else {
-        add_fvverts(vertices, shape);
+        if(!add_fvverts(vertices, shape, error)) return false;
         if (vertices.size() == 4) {
           if (vertices[0].position) {
             shape.quadspos.push_back({pos_map.at(vertices[0].position),
@@ -1696,40 +1706,40 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
         }
       }
     } else if (command == obj_command::line) {
-      if (scene.shapes.empty()) add_shape();
+      if (scene.shapes.empty()) if(!add_shape(error)) return false;
       if (!scene.shapes.back().positions.empty() &&
           scene.shapes.back().lines.empty()) {
-        add_shape();
+        if(!add_shape(error)) return false;
       }
       auto& shape = scene.shapes.back();
-      add_verts(vertices, shape);
+      if(!add_verts(vertices, shape, error)) return false;
       for (auto i = 1; i < vertices.size(); i++)
         shape.lines.push_back(
             {vertex_map.at(vertices[i - 1]), vertex_map.at(vertices[i])});
     } else if (command == obj_command::point) {
-      if (scene.shapes.empty()) add_shape();
+      if (scene.shapes.empty()) if(!add_shape(error)) return false;
       if (!scene.shapes.back().positions.empty() &&
           scene.shapes.back().points.empty()) {
-        add_shape();
+        if(!add_shape(error)) return false;
       }
       auto& shape = scene.shapes.back();
-      add_verts(vertices, shape);
+      if(!add_verts(vertices, shape, error)) return false;
       for (auto i = 0; i < vertices.size(); i++)
         shape.points.push_back(vertex_map.at(vertices[i]));
     } else if (command == obj_command::object) {
-      get_obj_value(value, oname);
+      if(!get_obj_value(value, oname))return set_type_error();
       gname = "";
       mname = "";
-      add_shape();
+      if(!add_shape(error)) return false;
     } else if (command == obj_command::group) {
-      get_obj_value(value, gname);
-      add_shape();
+      if(!get_obj_value(value, gname))return set_type_error();
+      if(!add_shape(error)) return false;
     } else if (command == obj_command::usemtl) {
-      get_obj_value(value, mname);
-      add_shape();
+      if(!get_obj_value(value, mname))return set_type_error();
+      if(!add_shape(error)) return false;
     } else if (command == obj_command::mtllib) {
       auto name = ""s;
-      get_obj_value(value, name);
+      if(!get_obj_value(value, name))return set_type_error();
       if (std::find(mlibs.begin(), mlibs.end(), name) != mlibs.end()) continue;
       mlibs.push_back(name);
       auto mtlpath = fs::path(filename).parent_path() / name;
@@ -1738,6 +1748,9 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
       // skip all other commands
     }
   }
+
+  // check error
+  if (command == obj_command::error) return set_parse_error();
 
   // check for extension
   auto extname = fs::path(filename).replace_extension(".objx");
@@ -1765,8 +1778,7 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
 
   // check if any empty shape is left
   for (auto& shape : scene.shapes) {
-    if (shape.positions.empty())
-      throw std::runtime_error("empty shapes not supported");
+    if (shape.positions.empty()) return set_sceneio_error(error, filename, false, "missing vertex positions");
   }
 
   // merging quads and triangles
