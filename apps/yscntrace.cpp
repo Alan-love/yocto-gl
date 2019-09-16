@@ -135,13 +135,13 @@ int main(int argc, const char* argv[]) {
 
   // build bvh
   auto bvh_timer = print_timed("building bvh");
-  auto bvh = bvh_scene{};
+  auto bvh       = bvh_scene{};
   make_bvh(bvh, scene, bvh_prms);
   bvh_timer.done();
 
   // init renderer
   auto lights_timer = print_timed("building lights");
-  auto lights = make_trace_lights(scene);
+  auto lights       = make_trace_lights(scene);
   lights_timer.done();
 
   // fix renderer type if no lights
@@ -160,9 +160,10 @@ int main(int argc, const char* argv[]) {
   // render
   for (auto sample = 0; sample < trace_prms.samples;
        sample += trace_prms.batch) {
-    auto nsamples = min(trace_prms.batch, trace_prms.samples - sample);
-    auto batch_timer    = print_timed("rendering samples " + std::to_string(sample) +
-                             "/" + std::to_string(trace_prms.samples));
+    auto nsamples    = min(trace_prms.batch, trace_prms.samples - sample);
+    auto batch_timer = print_timed("rendering samples " +
+                                   std::to_string(sample) + "/" +
+                                   std::to_string(trace_prms.samples));
     trace_samples(render, state, scene, bvh, lights, sample, trace_prms);
     if (save_batch) {
       auto outfilename = fs::path(imfilename)
