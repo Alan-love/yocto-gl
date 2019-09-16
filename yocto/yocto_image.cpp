@@ -2173,4 +2173,13 @@ bool save_volume(
   return true;
 }
 
+bool load_volume(const string& filename, volume<float>& vol) {
+  auto err = ""s;
+  return load_volume(filename, vol, err);
+}
+bool save_volume(const string& filename, const volume<float>& vol) {
+  auto err = ""s;
+  return save_volume(filename, vol, err);
+}
+
 }  // namespace yocto
