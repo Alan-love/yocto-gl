@@ -61,16 +61,18 @@ file_wrapper::~file_wrapper() {
 }
 
 // Opens a file returing a handle with RIIA
-void open_file(file_wrapper& fs, const string& filename, const string& mode) {
+bool open_file(file_wrapper& fs, const string& filename, const string& mode) {
   close_file(fs);
   fs.filename = filename;
   fs.mode     = mode;
   fs.fs       = fopen(filename.c_str(), mode.c_str());
-  if (!fs.fs) throw std::runtime_error("could not open file " + filename);
+  return (bool)fs;
 }
 file_wrapper open_file(const string& filename, const string& mode) {
-  auto fs = file_wrapper{};
-  open_file(fs, filename, mode);
+  auto fs     = file_wrapper{};
+  fs.filename = filename;
+  fs.mode     = mode;
+  fs.fs       = fopen(filename.c_str(), mode.c_str());
   return fs;
 }
 void close_file(file_wrapper& fs) {

@@ -121,9 +121,10 @@ struct file_wrapper {
 };
 
 // open a file
-file_wrapper open_file(const string& filename, const string& mode = "rt");
-void         open_file(
-            file_wrapper& fs, const string& filename, const string& mode = "rt");
+[[nodiscard]] file_wrapper open_file(
+    const string& filename, const string& mode = "rt");
+[[nodiscard]] bool open_file(
+    file_wrapper& fs, const string& filename, const string& mode = "rt");
 void close_file(file_wrapper& fs);
 
 }  // namespace yocto
