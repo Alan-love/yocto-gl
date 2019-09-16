@@ -3092,7 +3092,8 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
   auto format   = ply_format{};
   auto elements = vector<ply_element>{};
   auto comments = vector<string>{};
-  if(!read_ply_header(fs, format, elements, comments)) return set_parse_error();
+  if (!read_ply_header(fs, format, elements, comments))
+    return set_parse_error();
 
   // read values
   auto values = vector<float>{};
@@ -3106,7 +3107,8 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
       auto col = find_ply_property(element, "red", "green", "blue", "alpha");
       auto rad = find_ply_property(element, "radius");
       for (auto idx = 0; idx < element.count; idx++) {
-        if(!read_ply_value(fs, format, element, values, lists)) return set_parse_error();
+        if (!read_ply_value(fs, format, element, values, lists))
+          return set_parse_error();
         if (pos.x >= 0)
           positions.push_back({values[pos.x], values[pos.y], values[pos.z]});
         if (norm.x >= 0)
@@ -3120,7 +3122,8 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
     } else if (element.name == "face") {
       auto indices = find_ply_property(element, "vertex_indices");
       for (auto idx = 0; idx < element.count; idx++) {
-        if(!read_ply_value(fs, format, element, values, lists)) return set_parse_error();
+        if (!read_ply_value(fs, format, element, values, lists))
+          return set_parse_error();
         if (indices < 0) continue;
         auto& face = lists[indices];
         if (face.size() == 4) {
@@ -3133,7 +3136,8 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
     } else if (element.name == "line") {
       auto indices = find_ply_property(element, "vertex_indices");
       for (auto idx = 0; idx < element.count; idx++) {
-        if(!read_ply_value(fs, format, element, values, lists)) return set_parse_error();
+        if (!read_ply_value(fs, format, element, values, lists))
+          return set_parse_error();
         if (indices < 0) continue;
         auto line = lists[indices];
         for (auto i = 1; i < line.size(); i++)
@@ -3141,7 +3145,8 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
       }
     } else {
       for (auto idx = 0; idx < element.count; idx++)
-        if(!read_ply_value(fs, format, element, values, lists)) return set_parse_error();
+        if (!read_ply_value(fs, format, element, values, lists))
+          return set_parse_error();
     }
   }
 
@@ -3374,7 +3379,7 @@ static bool load_obj_shape(const string& filename, vector<int>& points,
   auto value     = obj_value{};
   auto vertices  = vector<obj_vertex>{};
   auto vert_size = obj_vertex{};
-  auto oerror = false;
+  auto oerror    = false;
   while (read_obj_command(fs, element, value, vertices, vert_size, oerror)) {
     if (element == obj_command::vertex) {
       opos.push_back(value.vec3);
@@ -3498,7 +3503,7 @@ static bool load_obj_shape(const string& filename, vector<int>& points,
   }
 
   // check error
-  if(oerror) return set_parse_error();
+  if (oerror) return set_parse_error();
 
   if (positions.empty())
     return set_shapeio_error(
@@ -3530,13 +3535,11 @@ static bool save_obj_shape(const string& filename, const vector<int>& points,
   write_obj_comment(
       fs, "Written by Yocto/GL\nhttps://github.com/xelatihy/yocto-gl\n");
 
-  for (auto& p : positions)
-    write_obj_command(fs, obj_command::vertex, p);
-  for (auto& n : normals)
-    write_obj_command(fs, obj_command::normal, n);
+  for (auto& p : positions) write_obj_command(fs, obj_command::vertex, p);
+  for (auto& n : normals) write_obj_command(fs, obj_command::normal, n);
   for (auto& t : texcoords)
-    write_obj_command(fs, obj_command::texcoord,
-        vec2f{t.x, flip_texcoord ? 1 - t.y : t.y});
+    write_obj_command(
+        fs, obj_command::texcoord, vec2f{t.x, flip_texcoord ? 1 - t.y : t.y});
 
   auto elems = vector<obj_vertex>{};
   auto mask = obj_vertex{1, texcoords.empty() ? 0 : 1, normals.empty() ? 0 : 1};

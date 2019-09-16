@@ -339,16 +339,12 @@ void load_island_shape(vector<yocto_shape>& shapes,
   auto value     = obj_value{};
   auto verts     = vector<obj_vertex>{};
   auto vert_size = obj_vertex{};
-  auto oerror = false;
+  auto oerror    = false;
   while (read_obj_command(fs, command, value, verts, vert_size, oerror)) {
-    if(oerror) throw std::runtime_error("bad obj");
+    if (oerror) throw std::runtime_error("bad obj");
     switch (command) {
-      case obj_command::vertex:
-        opos.push_back(value.vec3);
-        break;
-      case obj_command::normal:
-        onorm.push_back(value.vec3);
-        break;
+      case obj_command::vertex: opos.push_back(value.vec3); break;
+      case obj_command::normal: onorm.push_back(value.vec3); break;
       case obj_command::texcoord:
         throw std::runtime_error("texture coord not supported");
         break;
@@ -399,17 +395,17 @@ void load_island_shape(vector<yocto_shape>& shapes,
         }
       } break;
       case obj_command::group: {
-        gname = value.str;
+        gname      = value.str;
         split_next = true;
       } break;
       case obj_command::usemtl: {
-        mname = value.str;
+        mname      = value.str;
         split_next = true;
       } break;
       default: break;
     }
   }
-    if(oerror) throw std::runtime_error("bad obj");
+  if (oerror) throw std::runtime_error("bad obj");
 }
 
 void add_island_shape(yocto_scene& scene, const string& parent_name,

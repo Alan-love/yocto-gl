@@ -281,22 +281,22 @@ enum struct obj_value_type { num, bol, str, vec2, vec3, frame3 };
 
 // Obj value
 struct obj_value {
-  obj_value_type    type    = obj_value_type::num;
-  float             num  = 0;
-  bool              bol = false;
-  string            str = "";
-  vec2f             vec2 = zero2f;
-  vec3f             vec3 = zero3f;
-  frame3f           frame3 = identity3x4f;
+  obj_value_type type   = obj_value_type::num;
+  float          num    = 0;
+  bool           bol    = false;
+  string         str    = "";
+  vec2f          vec2   = zero2f;
+  vec3f          vec3   = zero3f;
+  frame3f        frame3 = identity3x4f;
 
-  obj_value() { }
-  obj_value(float num) : type{obj_value_type::num}, num{num} { }
-  obj_value(bool              bol) : type{obj_value_type::bol}, bol{bol} { }
-  obj_value(const char*            str) : type{obj_value_type::str}, str{str} { }
-  obj_value(string            str) : type{obj_value_type::str}, str{str} { }
-  obj_value(vec2f             vec2) : type{obj_value_type::vec2}, vec2{vec2} { }
-  obj_value(vec3f             vec3) : type{obj_value_type::vec3}, vec3{vec3} { }
-  obj_value(frame3f           frame3) : type{obj_value_type::frame3}, frame3{frame3} { }
+  obj_value() {}
+  obj_value(float num) : type{obj_value_type::num}, num{num} {}
+  obj_value(bool bol) : type{obj_value_type::bol}, bol{bol} {}
+  obj_value(const char* str) : type{obj_value_type::str}, str{str} {}
+  obj_value(string str) : type{obj_value_type::str}, str{str} {}
+  obj_value(vec2f vec2) : type{obj_value_type::vec2}, vec2{vec2} {}
+  obj_value(vec3f vec3) : type{obj_value_type::vec3}, vec3{vec3} {}
+  obj_value(frame3f frame3) : type{obj_value_type::frame3}, frame3{frame3} {}
 };
 
 // Read obj elements. Sets the command to `error` on error.
@@ -434,7 +434,7 @@ enum struct pbrt_command {
 bool read_pbrt_command(file_wrapper& fs, pbrt_command& command, string& name,
     string& type, frame3f& xform, vector<pbrt_value>& values, bool& error);
 bool read_pbrt_command(file_wrapper& fs, pbrt_command& command, string& name,
-    string& type, frame3f& xform, vector<pbrt_value>& values, bool& error, 
+    string& type, frame3f& xform, vector<pbrt_value>& values, bool& error,
     string& buffer);
 
 // Write pbrt commands
@@ -477,7 +477,7 @@ template <typename T>
 inline T get_pbrt_value(
     const vector<pbrt_value>& pbrt, const string& name, T def) {
   auto value = T{};
-  if(!get_pbrt_value(pbrt, name, value, def)) return def;
+  if (!get_pbrt_value(pbrt, name, value, def)) return def;
   return value;
 }
 
