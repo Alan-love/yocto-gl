@@ -123,7 +123,7 @@ struct file_wrapper {
 // open a file
 [[nodiscard]] file_wrapper open_file(
     const string& filename, const string& mode = "rt");
-[[nodiscard]] bool open_file(
+bool open_file(
     file_wrapper& fs, const string& filename, const string& mode = "rt");
 void close_file(file_wrapper& fs);
 
@@ -157,22 +157,22 @@ struct ply_element {
 };
 
 // Read Ply functions. Returns false on error.
-[[nodiscard]] bool read_ply_header(file_wrapper& fs, ply_format& format,
+bool read_ply_header(file_wrapper& fs, ply_format& format,
     vector<ply_element>& elements, vector<string>& comments);
-[[nodiscard]] bool read_ply_value(file_wrapper& fs, ply_format format,
+bool read_ply_value(file_wrapper& fs, ply_format format,
     const ply_element& element, vector<double>& values,
     vector<vector<double>>& lists);
-[[nodiscard]] bool read_ply_value(file_wrapper& fs, ply_format format,
+bool read_ply_value(file_wrapper& fs, ply_format format,
     const ply_element& element, vector<float>& values,
     vector<vector<int>>& lists);
 
 // Write Ply functions. Returns false on error.
-[[nodiscard]] bool write_ply_header(file_wrapper& fs, ply_format format,
+bool write_ply_header(file_wrapper& fs, ply_format format,
     const vector<ply_element>& elements, const vector<string>& comments);
-[[nodiscard]] bool write_ply_value(file_wrapper& fs, ply_format format,
+bool write_ply_value(file_wrapper& fs, ply_format format,
     const ply_element& element, vector<double>& values,
     vector<vector<double>>& lists);
-[[nodiscard]] bool write_ply_value(file_wrapper& fs, ply_format format,
+bool write_ply_value(file_wrapper& fs, ply_format format,
     const ply_element& element, vector<float>& values,
     vector<vector<int>>& lists);
 
