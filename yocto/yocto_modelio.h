@@ -381,14 +381,14 @@ bool write_yaml_property(file_wrapper& fs, const string& object,
 bool write_yaml_object(file_wrapper& fs, const string& object);
 
 // type-cheked yaml value access
-void get_yaml_value(const yaml_value& yaml, string& value);
-void get_yaml_value(const yaml_value& yaml, bool& value);
-void get_yaml_value(const yaml_value& yaml, int& value);
-void get_yaml_value(const yaml_value& yaml, float& value);
-void get_yaml_value(const yaml_value& yaml, vec2f& value);
-void get_yaml_value(const yaml_value& yaml, vec3f& value);
-void get_yaml_value(const yaml_value& yaml, mat3f& value);
-void get_yaml_value(const yaml_value& yaml, frame3f& value);
+bool get_yaml_value(const yaml_value& yaml, string& value);
+bool get_yaml_value(const yaml_value& yaml, bool& value);
+bool get_yaml_value(const yaml_value& yaml, int& value);
+bool get_yaml_value(const yaml_value& yaml, float& value);
+bool get_yaml_value(const yaml_value& yaml, vec2f& value);
+bool get_yaml_value(const yaml_value& yaml, vec3f& value);
+bool get_yaml_value(const yaml_value& yaml, mat3f& value);
+bool get_yaml_value(const yaml_value& yaml, frame3f& value);
 
 // yaml value construction
 yaml_value make_yaml_value(const string& value);

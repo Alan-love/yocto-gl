@@ -678,7 +678,10 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
   auto fs = open_file(filename);
   if (!fs) return set_sceneio_error(error, filename, false, "file not found");
 
-  // TODO: remove throws
+  // errors
+  auto set_parse_error = [&]() { return set_sceneio_error(error, filename, false, "parse error"); };
+  auto set_property_error = [&]() { return set_sceneio_error(error, filename, false, "unknown property"); };
+  auto set_type_error = [&]() { return set_sceneio_error(error, filename, false, "type mismatch"); };
 
   // parse state
   enum struct parsing_type {
@@ -713,9 +716,9 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
   auto value  = yaml_value{};
   auto yerror = false;
   while (read_yaml_property(fs, group, key, newobj, value, yerror)) {
-    if (group.empty()) {
-      throw std::runtime_error("bad yaml");
-    }
+    if(yerror) return set_parse_error();
+    if (group.empty())
+      return set_parse_error();
     if (key.empty()) {
       type = parsing_type::none;
       continue;
@@ -747,98 +750,98 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
         scene.environments.push_back({});
       } else {
         type = parsing_type::none;
-        throw std::runtime_error("unknown object type " + string(group));
+        return set_sceneio_error(error, filename, false, "unknown object type " + string(group));
       }
     }
     if (type == parsing_type::none) {
-      throw std::runtime_error("bad yaml");
+      return set_parse_error();
     } else if (type == parsing_type::camera) {
       auto& camera = scene.cameras.back();
       if (key == "uri") {
-        get_yaml_value(value, camera.uri);
+        if(!get_yaml_value(value, camera.uri)) return set_type_error();
       } else if (key == "frame") {
-        get_yaml_value(value, camera.frame);
+        if(!get_yaml_value(value, camera.frame)) return set_type_error();
       } else if (key == "orthographic") {
-        get_yaml_value(value, camera.orthographic);
+        if(!get_yaml_value(value, camera.orthographic)) return set_type_error();
       } else if (key == "lens") {
-        get_yaml_value(value, camera.lens);
+        if(!get_yaml_value(value, camera.lens)) return set_type_error();
       } else if (key == "film") {
-        get_yaml_value(value, camera.film);
+        if(!get_yaml_value(value, camera.film)) return set_type_error();
       } else if (key == "focus") {
-        get_yaml_value(value, camera.focus);
+        if(!get_yaml_value(value, camera.focus)) return set_type_error();
       } else if (key == "aperture") {
-        get_yaml_value(value, camera.aperture);
+        if(!get_yaml_value(value, camera.aperture)) return set_type_error();
       } else if (key == "lookat") {
         auto lookat = identity3x3f;
-        get_yaml_value(value, lookat);
+        if(!get_yaml_value(value, lookat)) return set_type_error();
         camera.frame = lookat_frame(lookat.x, lookat.y, lookat.z);
         camera.focus = length(lookat.x - lookat.y);
       } else {
-        throw std::runtime_error("unknown property " + string(key));
+        return set_property_error();
       }
     } else if (type == parsing_type::texture) {
       auto& texture = scene.textures.back();
       if (key == "uri") {
-        get_yaml_value(value, texture.uri);
+        if(!get_yaml_value(value, texture.uri)) return set_type_error();
         auto refname = texture.uri;
         if (is_preset_filename(refname)) {
           refname = get_preset_type(refname).second;
         }
         tmap[refname] = (int)scene.textures.size() - 1;
       } else if (key == "filename") {
-        get_yaml_value(value, texture.uri);
+        if(!get_yaml_value(value, texture.uri)) return set_type_error();
       } else {
-        throw std::runtime_error("unknown property " + string(key));
+        return set_property_error();
       }
     } else if (type == parsing_type::voltexture) {
       auto& texture = scene.voltextures.back();
       if (key == "uri") {
-        get_yaml_value(value, texture.uri);
+        if(!get_yaml_value(value, texture.uri)) return set_type_error();
         auto refname = texture.uri;
         if (is_preset_filename(refname)) {
           refname = get_preset_type(refname).second;
         }
         vmap[refname] = (int)scene.voltextures.size() - 1;
       } else {
-        throw std::runtime_error("unknown property " + string(key));
+        return set_property_error();
       }
     } else if (type == parsing_type::material) {
       auto& material = scene.materials.back();
       if (key == "uri") {
-        get_yaml_value(value, material.uri);
+        if(!get_yaml_value(value, material.uri)) return set_type_error();
         mmap[material.uri] = (int)scene.materials.size() - 1;
       } else if (key == "emission") {
-        get_yaml_value(value, material.emission);
+        if(!get_yaml_value(value, material.emission)) return set_type_error();
       } else if (key == "diffuse") {
-        get_yaml_value(value, material.diffuse);
+        if(!get_yaml_value(value, material.diffuse)) return set_type_error();
       } else if (key == "metallic") {
-        get_yaml_value(value, material.metallic);
+        if(!get_yaml_value(value, material.metallic)) return set_type_error();
       } else if (key == "specular") {
-        get_yaml_value(value, material.specular);
+        if(!get_yaml_value(value, material.specular)) return set_type_error();
       } else if (key == "roughness") {
-        get_yaml_value(value, material.roughness);
+        if(!get_yaml_value(value, material.roughness)) return set_type_error();
       } else if (key == "coat") {
-        get_yaml_value(value, material.coat);
+        if(!get_yaml_value(value, material.coat)) return set_type_error();
       } else if (key == "transmission") {
-        get_yaml_value(value, material.transmission);
+        if(!get_yaml_value(value, material.transmission)) return set_type_error();
       } else if (key == "refract") {
-        get_yaml_value(value, material.refract);
+        if(!get_yaml_value(value, material.refract)) return set_type_error();
       } else if (key == "voltransmission") {
-        get_yaml_value(value, material.voltransmission);
+        if(!get_yaml_value(value, material.voltransmission)) return set_type_error();
       } else if (key == "volmeanfreepath") {
-        get_yaml_value(value, material.volmeanfreepath);
+        if(!get_yaml_value(value, material.volmeanfreepath)) return set_type_error();
       } else if (key == "volscatter") {
-        get_yaml_value(value, material.volscatter);
+        if(!get_yaml_value(value, material.volscatter)) return set_type_error();
       } else if (key == "volemission") {
-        get_yaml_value(value, material.volemission);
+        if(!get_yaml_value(value, material.volemission)) return set_type_error();
       } else if (key == "volanisotropy") {
-        get_yaml_value(value, material.volanisotropy);
+        if(!get_yaml_value(value, material.volanisotropy)) return set_type_error();
       } else if (key == "volscale") {
-        get_yaml_value(value, material.volscale);
+        if(!get_yaml_value(value, material.volscale)) return set_type_error();
       } else if (key == "opacity") {
-        get_yaml_value(value, material.opacity);
+        if(!get_yaml_value(value, material.opacity)) return set_type_error();
       } else if (key == "coat") {
-        get_yaml_value(value, material.coat);
+        if(!get_yaml_value(value, material.coat)) return set_type_error();
       } else if (key == "emission_tex") {
         get_yaml_ref(value, material.emission_tex, tmap);
       } else if (key == "diffuse_tex") {
@@ -860,81 +863,83 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
       } else if (key == "voldensity_tex") {
         get_yaml_ref(value, material.voldensity_tex, vmap);
       } else if (key == "gltf_textures") {
-        get_yaml_value(value, material.gltf_textures);
+        if(!get_yaml_value(value, material.gltf_textures)) return set_type_error();
       } else {
-        throw std::runtime_error("unknown property " + string(key));
+        return set_property_error();
       }
     } else if (type == parsing_type::shape) {
       auto& shape = scene.shapes.back();
       if (key == "uri") {
-        get_yaml_value(value, shape.uri);
+        if(!get_yaml_value(value, shape.uri)) return set_type_error();
         auto refname = shape.uri;
         if (is_preset_filename(refname)) {
           refname = get_preset_type(refname).second;
         }
         smap[refname] = (int)scene.shapes.size() - 1;
       } else {
-        throw std::runtime_error("unknown property " + string(key));
+        return set_property_error();
       }
     } else if (type == parsing_type::subdiv) {
       auto& subdiv = scene.subdivs.back();
       if (key == "uri") {
-        get_yaml_value(value, subdiv.uri);
+        if(!get_yaml_value(value, subdiv.uri)) return set_type_error();
       } else if (key == "shape") {
         get_yaml_ref(value, subdiv.shape, smap);
       } else if (key == "subdivisions") {
-        get_yaml_value(value, subdiv.subdivisions);
+        if(!get_yaml_value(value, subdiv.subdivisions)) return set_type_error();
       } else if (key == "catmullclark") {
-        get_yaml_value(value, subdiv.catmullclark);
+        if(!get_yaml_value(value, subdiv.catmullclark)) return set_type_error();
       } else if (key == "smooth") {
-        get_yaml_value(value, subdiv.smooth);
+        if(!get_yaml_value(value, subdiv.smooth)) return set_type_error();
       } else if (key == "facevarying") {
-        get_yaml_value(value, subdiv.facevarying);
+        if(!get_yaml_value(value, subdiv.facevarying)) return set_type_error();
       } else if (key == "displacement_tex") {
         get_yaml_ref(value, subdiv.displacement_tex, tmap);
       } else if (key == "displacement") {
-        get_yaml_value(value, subdiv.displacement);
+        if(!get_yaml_value(value, subdiv.displacement)) return set_type_error();
       } else {
-        throw std::runtime_error("unknown property " + string(key));
+        return set_property_error();
       }
     } else if (type == parsing_type::instance) {
       auto& instance = scene.instances.back();
       if (key == "uri") {
-        get_yaml_value(value, instance.uri);
+        if(!get_yaml_value(value, instance.uri)) return set_type_error();
       } else if (key == "frame") {
-        get_yaml_value(value, instance.frame);
+        if(!get_yaml_value(value, instance.frame)) return set_type_error();
       } else if (key == "shape") {
         get_yaml_ref(value, instance.shape, smap);
       } else if (key == "material") {
         get_yaml_ref(value, instance.material, mmap);
       } else if (key == "lookat") {
         auto lookat = identity3x3f;
-        get_yaml_value(value, lookat);
+        if(!get_yaml_value(value, lookat)) return set_type_error();
         instance.frame = lookat_frame(lookat.x, lookat.y, lookat.z, true);
       } else {
-        throw std::runtime_error("unknown property " + string(key));
+        return set_property_error();
       }
     } else if (type == parsing_type::environment) {
       auto& environment = scene.environments.back();
       if (key == "uri") {
-        get_yaml_value(value, environment.uri);
+        if(!get_yaml_value(value, environment.uri)) return set_type_error();
       } else if (key == "frame") {
-        get_yaml_value(value, environment.frame);
+        if(!get_yaml_value(value, environment.frame)) return set_type_error();
       } else if (key == "emission") {
-        get_yaml_value(value, environment.emission);
+        if(!get_yaml_value(value, environment.emission)) return set_type_error();
       } else if (key == "emission_tex") {
         get_yaml_ref(value, environment.emission_tex, tmap);
       } else if (key == "lookat") {
         auto lookat = identity3x3f;
-        get_yaml_value(value, lookat);
+        if(!get_yaml_value(value, lookat)) return set_type_error();
         environment.frame = lookat_frame(lookat.x, lookat.y, lookat.z, true);
       } else {
-        throw std::runtime_error("unknown property " + string(key));
+        return set_property_error();
       }
     } else {
       assert(false);  // should not get here
     }
   }
+
+  if(yerror) return set_parse_error();
 
   return true;
 }

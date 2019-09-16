@@ -1547,22 +1547,6 @@ static inline bool parse_yaml_value(string_view& str, string& value) {
   value = string{valuev};
   return true;
 }
-static inline bool parse_yaml_value(string_view& str, int& value) {
-  skip_whitespace(str);
-  char* end = nullptr;
-  value     = (int)strtol(str.data(), &end, 10);
-  if (str == end) return false;
-  str.remove_prefix(end - str.data());
-  return true;
-}
-static inline bool parse_yaml_value(string_view& str, float& value) {
-  skip_whitespace(str);
-  char* end = nullptr;
-  value     = strtof(str.data(), &end);
-  if (str == end) return false;
-  str.remove_prefix(end - str.data());
-  return true;
-}
 static inline bool parse_yaml_value(string_view& str, double& value) {
   skip_whitespace(str);
   char* end = nullptr;
@@ -1573,45 +1557,45 @@ static inline bool parse_yaml_value(string_view& str, double& value) {
 }
 
 // parse yaml value
-void get_yaml_value(const yaml_value& yaml, string& value) {
-  if (yaml.type != yaml_value_type::string)
-    throw std::runtime_error("error parsing yaml value");
+bool get_yaml_value(const yaml_value& yaml, string& value) {
+  if (yaml.type != yaml_value_type::string) return false;
   value = yaml.string_;
+  return true;
 }
-void get_yaml_value(const yaml_value& yaml, bool& value) {
-  if (yaml.type != yaml_value_type::boolean)
-    throw std::runtime_error("error parsing yaml value");
+bool get_yaml_value(const yaml_value& yaml, bool& value) {
+  if (yaml.type != yaml_value_type::boolean) return false;
   value = yaml.boolean;
+  return true;
 }
-void get_yaml_value(const yaml_value& yaml, int& value) {
-  if (yaml.type != yaml_value_type::number)
-    throw std::runtime_error("error parsing yaml value");
+bool get_yaml_value(const yaml_value& yaml, int& value) {
+  if (yaml.type != yaml_value_type::number) return false;
   value = (int)yaml.number;
+  return true;
 }
-void get_yaml_value(const yaml_value& yaml, float& value) {
-  if (yaml.type != yaml_value_type::number)
-    throw std::runtime_error("error parsing yaml value");
+bool get_yaml_value(const yaml_value& yaml, float& value) {
+  if (yaml.type != yaml_value_type::number) return false;
   value = (float)yaml.number;
+  return true;
 }
-void get_yaml_value(const yaml_value& yaml, vec2f& value) {
-  if (yaml.type != yaml_value_type::array || yaml.number != 2)
-    throw std::runtime_error("error parsing yaml value");
+bool get_yaml_value(const yaml_value& yaml, vec2f& value) {
+  if (yaml.type != yaml_value_type::array || yaml.number != 2) return false;
   value = {(float)yaml.array_[0], (float)yaml.array_[1]};
+  return true;
 }
-void get_yaml_value(const yaml_value& yaml, vec3f& value) {
-  if (yaml.type != yaml_value_type::array || yaml.number != 3)
-    throw std::runtime_error("error parsing yaml value");
+bool get_yaml_value(const yaml_value& yaml, vec3f& value) {
+  if (yaml.type != yaml_value_type::array || yaml.number != 3) return false;
   value = {(float)yaml.array_[0], (float)yaml.array_[1], (float)yaml.array_[2]};
+  return true;
 }
-void get_yaml_value(const yaml_value& yaml, mat3f& value) {
-  if (yaml.type != yaml_value_type::array || yaml.number != 9)
-    throw std::runtime_error("error parsing yaml value");
+bool get_yaml_value(const yaml_value& yaml, mat3f& value) {
+  if (yaml.type != yaml_value_type::array || yaml.number != 9) return false;
   for (auto i = 0; i < 9; i++) (&value.x.x)[i] = (float)yaml.array_[i];
+  return true;
 }
-void get_yaml_value(const yaml_value& yaml, frame3f& value) {
-  if (yaml.type != yaml_value_type::array || yaml.number != 12)
-    throw std::runtime_error("error parsing yaml value");
+bool get_yaml_value(const yaml_value& yaml, frame3f& value) {
+  if (yaml.type != yaml_value_type::array || yaml.number != 12) return false;
   for (auto i = 0; i < 12; i++) (&value.x.x)[i] = (float)yaml.array_[i];
+  return true;
 }
 
 // construction
@@ -1688,7 +1672,8 @@ static bool parse_yaml_value(string_view& str, yaml_value& value) {
     return true;
   }
   skip_whitespace(str);
-  if (!str.empty() && !is_whitespace(str)) throw std::runtime_error("bad yaml");
+  if (!str.empty() && !is_whitespace(str)) return false;
+  return true;
 }
 
 bool read_yaml_property(file_wrapper& fs, string& group, string& key,
