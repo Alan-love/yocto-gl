@@ -975,27 +975,33 @@ void load_element(
   if (type == typeid(yocto_texture)) {
     auto& texture = scene.textures[index];
     if (is_hdr_filename(texture.uri)) {
-      if(!load_image(fs::path(filename).parent_path() / texture.uri, texture.hdr)) throw std::runtime_error("cannot load " + texture.uri);
+      if (!load_image(
+              fs::path(filename).parent_path() / texture.uri, texture.hdr))
+        throw std::runtime_error("cannot load " + texture.uri);
     } else {
-      if(!load_imageb(fs::path(filename).parent_path() / texture.uri, texture.ldr)) throw std::runtime_error("cannot load " + texture.uri);
+      if (!load_imageb(
+              fs::path(filename).parent_path() / texture.uri, texture.ldr))
+        throw std::runtime_error("cannot load " + texture.uri);
     }
   } else if (type == typeid(yocto_voltexture)) {
     auto& texture = scene.voltextures[index];
     load_volume(fs::path(filename).parent_path() / texture.uri, texture.vol);
   } else if (type == typeid(yocto_shape)) {
     auto& shape = scene.shapes[index];
-    if(!load_shape(fs::path(filename).parent_path() / shape.uri, shape.points,
-        shape.lines, shape.triangles, shape.quads, shape.quadspos,
-        shape.quadsnorm, shape.quadstexcoord, shape.positions, shape.normals,
-        shape.texcoords, shape.colors, shape.radius, false)) throw std::runtime_error("cannot load " + shape.uri);
+    if (!load_shape(fs::path(filename).parent_path() / shape.uri, shape.points,
+            shape.lines, shape.triangles, shape.quads, shape.quadspos,
+            shape.quadsnorm, shape.quadstexcoord, shape.positions,
+            shape.normals, shape.texcoords, shape.colors, shape.radius, false))
+      throw std::runtime_error("cannot load " + shape.uri);
   } else if (type == typeid(yocto_subdiv)) {
     // TODO: this needs more fixing?
     auto& subdiv = scene.subdivs[index];
-    if(!load_shape(fs::path(filename).parent_path() / subdiv.uri, subdiv.points,
-        subdiv.lines, subdiv.triangles, subdiv.quads, subdiv.quadspos,
-        subdiv.quadsnorm, subdiv.quadstexcoord, subdiv.positions,
-        subdiv.normals, subdiv.texcoords, subdiv.colors, subdiv.radius,
-        subdiv.facevarying)) throw std::runtime_error("cannot load " + subdiv.uri);
+    if (!load_shape(fs::path(filename).parent_path() / subdiv.uri,
+            subdiv.points, subdiv.lines, subdiv.triangles, subdiv.quads,
+            subdiv.quadspos, subdiv.quadsnorm, subdiv.quadstexcoord,
+            subdiv.positions, subdiv.normals, subdiv.texcoords, subdiv.colors,
+            subdiv.radius, subdiv.facevarying))
+      throw std::runtime_error("cannot load " + subdiv.uri);
     tesselate_subdiv(scene, scene.subdivs[index]);
   } else {
     throw std::runtime_error("unsupported type "s + type.name());

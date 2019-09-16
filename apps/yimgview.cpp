@@ -437,7 +437,8 @@ void update(const opengl_window& win, app_state& app) {
         img.load_done = false;
         task.result   = std::async(std::launch::async, [&img]() {
           img.img = {};
-          if(!load_image(img.filename, img.img)) throw std::runtime_error("cannot load " + img.filename);
+          if (!load_image(img.filename, img.img))
+            throw std::runtime_error("cannot load " + img.filename);
           compute_image_stats(
               img.image_stats, img.img, is_hdr_filename(img.filename));
         });
@@ -448,11 +449,13 @@ void update(const opengl_window& win, app_state& app) {
           if (!is_hdr_filename(img.outname)) {
             auto ldr = image<vec4b>{};
             float_to_byte(ldr, img.display);
-            if(!save_imageb(img.outname, ldr))throw std::runtime_error("cannot save " + img.outname);
+            if (!save_imageb(img.outname, ldr))
+              throw std::runtime_error("cannot save " + img.outname);
           } else {
             auto aux = image<vec4f>{};
             srgb_to_rgb(aux, img.display);
-            if(!save_image(img.outname, aux))throw std::runtime_error("cannot save " + img.outname);
+            if (!save_image(img.outname, aux))
+              throw std::runtime_error("cannot save " + img.outname);
           }
         });
       } break;

@@ -80,7 +80,8 @@ using json = nlohmann::json;
 // Load a JSON object
 inline void load_json(const string& filename, json& js) {
   auto text = ""s;
-  if(!load_text(filename, text)) throw std::runtime_error("cannot load " + filename);
+  if (!load_text(filename, text))
+    throw std::runtime_error("cannot load " + filename);
   js = json::parse(text);
 }
 
@@ -194,7 +195,8 @@ void load_island_lights(
     } else if (ljs.at("type") == "dome") {
       auto texture = yocto_texture{};
       texture.uri  = ljs.at("map");
-      if(!load_image(dirname + texture.uri, texture.hdr)) throw std::runtime_error("cannot load " + dirname + texture.uri);
+      if (!load_image(dirname + texture.uri, texture.hdr))
+        throw std::runtime_error("cannot load " + dirname + texture.uri);
       scene.textures.push_back(texture);
       auto environment     = yocto_environment{};
       environment.uri      = "environments/lights/" + name + ".yaml";
@@ -524,7 +526,8 @@ void load_island_archive(const string& filename, const string& dirname,
     unordered_map<string, int>&             tmap) {
   printf("%s\n", filename.c_str());
   auto buffer = ""s;
-  if(!load_text(dirname + filename, buffer)) throw std::runtime_error("cannot load " + dirname + filename);
+  if (!load_text(dirname + filename, buffer))
+    throw std::runtime_error("cannot load " + dirname + filename);
   auto view = sajson::mutable_string_view(buffer.size(), buffer.data());
   auto doc  = sajson::parse(sajson::dynamic_allocation(), view);
   auto iijs = doc.get_root();
@@ -554,7 +557,8 @@ void load_island_variant_archive(const string& filename, const string& dirname,
   // elements
   printf("%s\n", filename.c_str());
   auto buffer = ""s;
-  if(!load_text(dirname + filename, buffer)) throw std::runtime_error("cannot load " + dirname + filename);
+  if (!load_text(dirname + filename, buffer))
+    throw std::runtime_error("cannot load " + dirname + filename);
   auto view = sajson::mutable_string_view(buffer.size(), buffer.data());
   auto doc  = sajson::parse(sajson::dynamic_allocation(), view);
   auto iijs = doc.get_root();
@@ -622,7 +626,8 @@ void load_island_element(const string& filename, const string& dirname,
 
   printf("%s\n", filename.c_str());
   auto buffer = ""s;
-  if(!load_text(dirname + filename, buffer)) throw std::runtime_error("cannot load " + dirname + filename);
+  if (!load_text(dirname + filename, buffer))
+    throw std::runtime_error("cannot load " + dirname + filename);
   auto view = sajson::mutable_string_view(buffer.size(), buffer.data());
   auto doc  = sajson::parse(sajson::dynamic_allocation(), view);
   auto iijs = doc.get_root();
@@ -653,7 +658,8 @@ void load_island_curve(const string& filename, const string& dirname,
     unordered_map<string, int>&             tmap) {
   printf("%s\n", filename.c_str());
   auto buffer = ""s;
-  if(!load_text(dirname + filename, buffer)) throw std::runtime_error("cannot load " + dirname + filename);
+  if (!load_text(dirname + filename, buffer))
+    throw std::runtime_error("cannot load " + dirname + filename);
   auto view    = sajson::mutable_string_view(buffer.size(), buffer.data());
   auto doc     = sajson::parse(sajson::dynamic_allocation(), view);
   auto outname = "ply/" + get_dirname(filename).substr(5) +
@@ -694,7 +700,8 @@ void load_island_curvetube(const string& filename, const string& dirname,
     unordered_map<string, int>&             tmap) {
   printf("%s\n", filename.c_str());
   auto buffer = ""s;
-  if(!load_text(dirname + filename, buffer)) throw std::runtime_error("cannot load " + dirname + filename);
+  if (!load_text(dirname + filename, buffer))
+    throw std::runtime_error("cannot load " + dirname + filename);
   auto view    = sajson::mutable_string_view(buffer.size(), buffer.data());
   auto doc     = sajson::parse(sajson::dynamic_allocation(), view);
   auto outname = "ply/" + get_dirname(filename).substr(5) +

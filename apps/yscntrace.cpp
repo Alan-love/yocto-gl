@@ -175,23 +175,27 @@ int main(int argc, const char* argv[]) {
                                  "-s" + std::to_string(sample + nsamples) +
                                  fs::path(imfilename).extension().string())
                              .string();
-        if (is_hdr_filename(outfilename)) {
-          if(!save_image(outfilename, logo ? add_logo(render) : render)) print_fatal("cannot save " + outfilename);
-        } else {
-          if(!save_imageb(
-              outfilename, logo ? add_logo(tonemapb(render, tonemap_prms))
-                                : tonemapb(render, tonemap_prms))) print_fatal("cannot save " + outfilename);
-        }
+      if (is_hdr_filename(outfilename)) {
+        if (!save_image(outfilename, logo ? add_logo(render) : render))
+          print_fatal("cannot save " + outfilename);
+      } else {
+        if (!save_imageb(
+                outfilename, logo ? add_logo(tonemapb(render, tonemap_prms))
+                                  : tonemapb(render, tonemap_prms)))
+          print_fatal("cannot save " + outfilename);
+      }
     }
   }
 
   // save image
   auto timer = print_timed("saving image");
   if (is_hdr_filename(imfilename)) {
-    if(!save_image(imfilename, logo ? add_logo(render) : render)) print_fatal("cannot save " + imfilename);
+    if (!save_image(imfilename, logo ? add_logo(render) : render))
+      print_fatal("cannot save " + imfilename);
   } else {
-    if(!save_imageb(imfilename, logo ? add_logo(tonemapb(render, tonemap_prms))
-                                  : tonemapb(render, tonemap_prms))) print_fatal("cannot save " + imfilename);
+    if (!save_imageb(imfilename, logo ? add_logo(tonemapb(render, tonemap_prms))
+                                      : tonemapb(render, tonemap_prms)))
+      print_fatal("cannot save " + imfilename);
   }
 
   // done

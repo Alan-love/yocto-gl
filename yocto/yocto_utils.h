@@ -108,6 +108,8 @@
 
 #include "yocto_math.h"
 
+#include <algorithm>
+#include <atomic>
 #include <cctype>
 #include <chrono>
 #include <cstdio>
@@ -115,8 +117,6 @@
 #include <mutex>
 #include <string>
 #include <thread>
-#include <algorithm>
-#include <atomic>
 
 // -----------------------------------------------------------------------------
 // USING DIRECTIVES
@@ -240,15 +240,13 @@ inline string format_num(uint64_t num) {
 // Print traces for timing and program debugging
 struct scoped_timer {
   int64_t start_time = -1;
-  scoped_timer() { }
-  scoped_timer(int64_t start) : start_time{start} { }
+  scoped_timer() {}
+  scoped_timer(int64_t start) : start_time{start} {}
   void stop() {
-    if(start_time >= 0)
-    printf(" in %s\n", format_duration(get_time() - start_time).c_str());
+    if (start_time >= 0)
+      printf(" in %s\n", format_duration(get_time() - start_time).c_str());
   }
-  ~scoped_timer() {
-    stop();
-  }
+  ~scoped_timer() { stop(); }
 };
 inline auto print_timed(const string& msg) {
   printf("%s", msg.c_str());
@@ -460,9 +458,7 @@ inline bool exists_file(const string& filename) {
 namespace yocto {
 
 // Result of file io operations.
-enum struct fileio_status {
-  ok, file_not_found, io_error
-};
+enum struct fileio_status { ok, file_not_found, io_error };
 struct [[nodiscard]] fileio_result {
   fileio_status status = fileio_status::ok;
 
@@ -516,7 +512,8 @@ inline fileio_result load_binary(const string& filename, vector<byte>& data) {
 }
 
 // Save a binary file
-inline fileio_result save_binary(const string& filename, const vector<byte>& data) {
+inline fileio_result save_binary(
+    const string& filename, const vector<byte>& data) {
   auto fs = fopen(filename.c_str(), "wb");
   if (!fs) return {fileio_status::file_not_found};
   if (fwrite(data.data(), 1, data.size(), fs) != data.size()) {

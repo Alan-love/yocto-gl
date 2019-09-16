@@ -1844,19 +1844,19 @@ static inline pair<string, string> get_preset_type(const string& filename) {
 static inline imageio_result load_image_preset(
     const string& filename, image<vec4f>& img) {
   try {
-  auto [type, nfilename] = get_preset_type(filename);
-  img.resize({1024, 1024});
-  if (type == "images2") img.resize({2048, 1024});
-  make_image_preset(img, type);
-  return {imageio_status::ok};
-  } catch(std::exception& e) {
+    auto [type, nfilename] = get_preset_type(filename);
+    img.resize({1024, 1024});
+    if (type == "images2") img.resize({2048, 1024});
+    make_image_preset(img, type);
+    return {imageio_status::ok};
+  } catch (std::exception& e) {
     return {imageio_status::bad_preset};
   }
 }
 static inline imageio_result load_image_preset(
     const string& filename, image<vec4b>& img) {
   auto imgf = image<vec4f>{};
-  if(auto err = load_image_preset(filename, imgf); !err) return err;
+  if (auto err = load_image_preset(filename, imgf); !err) return err;
   img.resize(imgf.size());
   rgb_to_srgb(img, imgf);
   return {imageio_status::ok};
@@ -1899,7 +1899,7 @@ imageio_result load_image(const string& filename, image<vec4f>& img) {
     return {imageio_status::ok};
   } else if (!is_hdr_filename(filename)) {
     auto imgb = image<vec4b>{};
-    if(auto err = load_imageb(filename, imgb); !err) return err;
+    if (auto err = load_imageb(filename, imgb); !err) return err;
     srgb_to_rgb(img, imgb);
     return {imageio_status::ok};
   } else {
@@ -1946,7 +1946,7 @@ imageio_result load_imageb(const string& filename, image<vec4b>& img) {
     return {imageio_status::ok};
   } else if (is_hdr_filename(filename)) {
     auto imgf = image<vec4f>{};
-    if(auto err = load_image(filename, imgf); !err) return err;
+    if (auto err = load_image(filename, imgf); !err) return err;
     img = rgb_to_srgbb(imgf);
     return {imageio_status::ok};
   } else {
@@ -2135,12 +2135,15 @@ imageio_result load_volume(const string& filename, volume<float>& vol) {
   if (!voxels) return {imageio_status::io_error};
   vol = volume{{width, height, depth}, (const float*)voxels};
   delete[] voxels;
-return {imageio_status::ok};}
+  return {imageio_status::ok};
+}
 
 // Saves volume data in binary format.
 imageio_result save_volume(const string& filename, const volume<float>& vol) {
   if (!save_yvol(filename.c_str(), vol.size().x, vol.size().y, vol.size().z, 1,
-          vol.data())) return {imageio_status::io_error};
-return {imageio_status::ok};}
+          vol.data()))
+    return {imageio_status::io_error};
+  return {imageio_status::ok};
+}
 
 }  // namespace yocto

@@ -71,7 +71,7 @@ int main(int argc, const char** argv) {
   if (!parse_cli(cli, argc, argv)) exit(1);
 
   // load mesh
-  auto shape = yocto_shape{};
+  auto shape      = yocto_shape{};
   auto load_timer = print_timed("loading shape");
   if (!load_shape(filename, shape.points, shape.lines, shape.triangles,
           shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
@@ -84,7 +84,7 @@ int main(int argc, const char** argv) {
   if (uscale != 1) scale *= uscale;
   if (translate != zero3f || rotate != zero3f || scale != vec3f{1}) {
     auto xform_timer = print_timed("transforming shape");
-    auto xform = translation_frame(translate) * scaling_frame(scale) *
+    auto xform       = translation_frame(translate) * scaling_frame(scale) *
                  rotation_frame({1, 0, 0}, radians(rotate.x)) *
                  rotation_frame({0, 0, 1}, radians(rotate.z)) *
                  rotation_frame({0, 1, 0}, radians(rotate.y));
@@ -95,16 +95,16 @@ int main(int argc, const char** argv) {
 
   // compute normals
   if (normals) {
-    auto normals_timer    = print_timed("computing normals");
-    shape.normals = compute_normals(shape);
+    auto normals_timer = print_timed("computing normals");
+    shape.normals      = compute_normals(shape);
     if (!shape.quadspos.empty()) shape.quadsnorm = shape.quadspos;
   }
 
   // compute geodesics and store them as colors
   if (geodesic_source >= 0 || num_geodesic_samples > 0) {
-    auto geodesic_timer       = print_timed("computing geodesics");
-    auto adjacencies = face_adjacencies(shape.triangles);
-    auto solver      = make_geodesic_solver(
+    auto geodesic_timer = print_timed("computing geodesics");
+    auto adjacencies    = face_adjacencies(shape.triangles);
+    auto solver         = make_geodesic_solver(
         shape.triangles, adjacencies, shape.positions);
     auto sources = vector<int>();
     if (geodesic_source >= 0) {

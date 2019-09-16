@@ -583,11 +583,16 @@ namespace yocto {
 
 // Result of shape io operations.
 enum struct shapeio_status {
-  ok, file_not_found, io_error, bad_data, unsupported_format, bad_preset
+  ok,
+  file_not_found,
+  io_error,
+  bad_data,
+  unsupported_format,
+  bad_preset
 };
 struct [[nodiscard]] shapeio_result {
   shapeio_status status = shapeio_status::ok;
-  int line = 0;
+  int            line   = 0;
 
   operator bool() const { return status == shapeio_status::ok; }
 };

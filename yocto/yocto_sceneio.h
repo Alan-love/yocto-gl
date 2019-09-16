@@ -58,17 +58,17 @@ namespace yocto {
 
 // Result of file io operations.
 enum struct sceneio_status {
-  ok, file_not_found, io_error, bad_data, unsupported_format, bad_texture, bad_shape
+  // clang-format off
+  ok, file_not_found, io_error, bad_data, unsupported_format,
+  bad_texture, bad_shape, bad_voltexture, bad_subdiv
+  // clang-format on
 };
 struct [[nodiscard]] sceneio_result {
-  sceneio_status status = sceneio_status::ok;
-  int line = 0;
-  imageio_status texture_status = imageio_status::ok;
-  int texture_index = -1;
-  shapeio_status shape_status = shapeio_status::ok;
-  int shape_index = -1;
-  shapeio_status subdiv_status = shapeio_status::ok;
-  int subdiv_index = -1;
+  sceneio_status status        = sceneio_status::ok;
+  int            line          = 0;
+  imageio_result istatus       = {};
+  shapeio_result sstatus       = {};
+  int            element_index = -1;
 
   operator bool() const { return status == sceneio_status::ok; }
 };
@@ -97,9 +97,12 @@ sceneio_result save_scene(const string& filename, const yocto_scene& scene,
 
 // Load/save scene textures
 imageio_result load_texture(yocto_texture& texture, const string& dirname);
-imageio_result save_texture(const yocto_texture& texture, const string& dirname);
-imageio_result load_voltexture(yocto_voltexture& texture, const string& dirname);
-imageio_result save_voltexture(const yocto_voltexture& texture, const string& dirname);
+imageio_result save_texture(
+    const yocto_texture& texture, const string& dirname);
+imageio_result load_voltexture(
+    yocto_voltexture& texture, const string& dirname);
+imageio_result save_voltexture(
+    const yocto_voltexture& texture, const string& dirname);
 
 // Load/save scene shapes
 shapeio_result load_shape(yocto_shape& shape, const string& dirname);

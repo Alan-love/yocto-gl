@@ -300,7 +300,11 @@ namespace yocto {
 
 // Result of image io operations.
 enum struct imageio_status {
-  ok, file_not_found, io_error, unsupported_format, bad_preset
+  ok,
+  file_not_found,
+  io_error,
+  unsupported_format,
+  bad_preset
 };
 struct [[nodiscard]] imageio_result {
   imageio_status status = imageio_status::ok;
