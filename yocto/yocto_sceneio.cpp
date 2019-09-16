@@ -353,7 +353,7 @@ sceneio_result load_textures(
     for (auto& texture : scene.textures) {
       if (params.cancel && *params.cancel) break;
       if (!texture.hdr.empty() || !texture.ldr.empty()) continue;
-      if (auto err = load_texture(texture, dirname); !err) 
+      if (auto err = load_texture(texture, dirname); !err)
         return sceneio_error(filename, false, "missing texture\n" + err.error);
     }
     for (auto& texture : scene.voltextures) {
@@ -366,7 +366,8 @@ sceneio_result load_textures(
   } else {
     auto result = sceneio_ok();
     auto mutex  = std::mutex();
-    parallel_foreach(scene.textures,
+    parallel_foreach(
+        scene.textures,
         [&](auto& texture) {
           {
             std::lock_guard guard{mutex};
@@ -375,11 +376,13 @@ sceneio_result load_textures(
           if (!texture.hdr.empty() || !texture.ldr.empty()) return;
           if (auto err = load_texture(texture, dirname); !err) {
             std::lock_guard guard{mutex};
-            result = sceneio_error(filename, false, "missing texture\n" + err.error);
+            result = sceneio_error(
+                filename, false, "missing texture\n" + err.error);
           }
         },
         params.cancel);
-    parallel_foreach(scene.voltextures,
+    parallel_foreach(
+        scene.voltextures,
         [&](auto& texture) {
           {
             std::lock_guard guard{mutex};
@@ -388,7 +391,8 @@ sceneio_result load_textures(
           if (!texture.vol.empty()) return;
           if (auto err = load_voltexture(texture, dirname); !err) {
             std::lock_guard guard{mutex};
-            result = sceneio_error(filename, false, "missing texture\n" + err.error);
+            result = sceneio_error(
+                filename, false, "missing texture\n" + err.error);
           }
         },
         params.cancel);
@@ -429,7 +433,8 @@ sceneio_result save_textures(const string& filename, const yocto_scene& scene,
           }
           if (auto err = save_texture(texture, dirname); !err) {
             std::lock_guard guard{mutex};
-            result = sceneio_error(filename, false, "missing texture\n" + err.error);
+            result = sceneio_error(
+                filename, false, "missing texture\n" + err.error);
           }
         },
         params.cancel);
@@ -442,7 +447,8 @@ sceneio_result save_textures(const string& filename, const yocto_scene& scene,
           }
           if (auto err = save_voltexture(texture, dirname); !err) {
             std::lock_guard guard{mutex};
-            result = sceneio_error(filename, false, "missing texture\n" + err.error);
+            result = sceneio_error(
+                filename, false, "missing texture\n" + err.error);
           }
         },
         params.cancel);
@@ -536,7 +542,8 @@ sceneio_result load_shapes(
           }
           if (auto err = load_shape(shape, dirname); !err) {
             std::lock_guard guard{mutex};
-            result = sceneio_error(filename, false, "missing shape\n" + err.error);
+            result = sceneio_error(
+                filename, false, "missing shape\n" + err.error);
           }
         },
         params.cancel);
@@ -549,7 +556,8 @@ sceneio_result load_shapes(
           }
           if (auto err = load_subdiv(subdiv, dirname); !err) {
             std::lock_guard guard{mutex};
-            result = sceneio_error(filename, false, "missing subdiv\n" + err.error);
+            result = sceneio_error(
+                filename, false, "missing subdiv\n" + err.error);
           }
         },
         params.cancel);
@@ -587,7 +595,8 @@ sceneio_result save_shapes(const string& filename, const yocto_scene& scene,
           }
           if (auto err = save_shape(shape, dirname); !err) {
             std::lock_guard guard{mutex};
-            result = sceneio_error(filename, false, "missing shape\n" + err.error);
+            result = sceneio_error(
+                filename, false, "missing shape\n" + err.error);
           }
         },
         params.cancel);
@@ -600,7 +609,8 @@ sceneio_result save_shapes(const string& filename, const yocto_scene& scene,
           }
           if (auto err = save_subdiv(subdiv, dirname); !err) {
             std::lock_guard guard{mutex};
-            result = sceneio_error(filename, false, "missing subdiv\n" + err.error);
+            result = sceneio_error(
+                filename, false, "missing subdiv\n" + err.error);
           }
         },
         params.cancel);
@@ -2033,10 +2043,11 @@ static sceneio_result load_ply_scene(
   // load ply mesh
   scene.shapes.push_back({});
   auto& shape = scene.shapes.back();
-  if(auto  err   = load_shape(filename, shape.points, shape.lines, shape.triangles,
-      shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
-      shape.positions, shape.normals, shape.texcoords, shape.colors,
-      shape.radius, false); !err) {
+  if (auto err = load_shape(filename, shape.points, shape.lines,
+          shape.triangles, shape.quads, shape.quadspos, shape.quadsnorm,
+          shape.quadstexcoord, shape.positions, shape.normals, shape.texcoords,
+          shape.colors, shape.radius, false);
+      !err) {
     return sceneio_error(filename, false, "missing shape\n" + err.error);
   }
 
@@ -2064,10 +2075,11 @@ static sceneio_result save_ply_scene(const string& filename,
     throw std::runtime_error("cannot save empty scene " + filename);
   }
   auto& shape = scene.shapes.front();
-  if(auto  err   = save_shape(filename, shape.points, shape.lines, shape.triangles,
-      shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
-      shape.positions, shape.normals, shape.texcoords, shape.colors,
-      shape.radius); !err) {
+  if (auto err = save_shape(filename, shape.points, shape.lines,
+          shape.triangles, shape.quads, shape.quadspos, shape.quadsnorm,
+          shape.quadstexcoord, shape.positions, shape.normals, shape.texcoords,
+          shape.colors, shape.radius);
+      !err) {
     // TODO: do better here
     return sceneio_error(filename, true, "missing shape\n" + err.error);
   }
@@ -4065,10 +4077,12 @@ static sceneio_result save_pbrt_scene(const string& filename,
   // save meshes
   auto dirname = fs::path(filename).parent_path();
   for (auto& shape : scene.shapes) {
-    if(auto  err   = save_shape((dirname / shape.uri).replace_extension(".ply"),
-        shape.points, shape.lines, shape.triangles, shape.quads, shape.quadspos,
-        shape.quadsnorm, shape.quadstexcoord, shape.positions, shape.normals,
-        shape.texcoords, shape.colors, shape.radius); !err) {
+    if (auto err = save_shape((dirname / shape.uri).replace_extension(".ply"),
+            shape.points, shape.lines, shape.triangles, shape.quads,
+            shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
+            shape.positions, shape.normals, shape.texcoords, shape.colors,
+            shape.radius);
+        !err) {
       return sceneio_error(filename, true, "missing shape\n" + err.error);
     }
   }
