@@ -460,70 +460,71 @@ inline bool exists_file(const string& filename) {
 namespace yocto {
 
 // Result of file io operations.
-struct [[nodiscard]] fileio_result {
-  bool ok = true;
-  string message = "";
-  operator bool() const { return ok; }
+enum struct fileio_status {
+  ok, file_not_found, io_error
 };
-inline fileio_result fileio_ok() { return fileio_result{}; }
-inline fileio_result fileio_error(const string& err) { return {false, err}; }
+struct [[nodiscard]] fileio_result {
+  fileio_status status = fileio_status::ok;
+
+  operator bool() const { return status == fileio_status::ok; }
+};
 
 // Load a text file
 inline fileio_result load_text(const string& filename, string& str) {
   // https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c
   auto fs = fopen(filename.c_str(), "rt");
-  if (!fs) return fileio_error("cannot open file " + filename);
+  if (!fs) return {fileio_status::file_not_found};
   fseek(fs, 0, SEEK_END);
   auto length = ftell(fs);
   fseek(fs, 0, SEEK_SET);
   str.resize(length);
   if (fread(str.data(), 1, length, fs) != length) {
     fclose(fs);
-    return fileio_error("cannot read file " + filename);
+    return {fileio_status::io_error};
   }
   fclose(fs);
-  return fileio_ok();
+  return {fileio_status::ok};
 }
 
 // Save a text file
 inline fileio_result save_text(const string& filename, const string& str) {
   auto fs = fopen(filename.c_str(), "wt");
-  if (!fs) return fileio_error("cannot open file " + filename);
+  if (!fs) return {fileio_status::file_not_found};
   if (fprintf(fs, "%s", str.c_str()) < 0) {
     fclose(fs);
-    return fileio_error("cannot write file " + filename);
+    return {fileio_status::io_error};
   }
   fclose(fs);
-  return fileio_ok();
+  return {fileio_status::ok};
 }
 
 // Load a binary file
 inline fileio_result load_binary(const string& filename, vector<byte>& data) {
   // https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c
   auto fs = fopen(filename.c_str(), "rb");
-  if (!fs) return fileio_error("cannot open file " + filename);
+  if (!fs) return {fileio_status::file_not_found};
   fseek(fs, 0, SEEK_END);
   auto length = ftell(fs);
   fseek(fs, 0, SEEK_SET);
   data.resize(length);
   if (fread(data.data(), 1, length, fs) != length) {
     fclose(fs);
-    return fileio_error("cannot read file " + filename);
+    return {fileio_status::io_error};
   }
   fclose(fs);
-  return fileio_ok();
+  return {fileio_status::ok};
 }
 
 // Save a binary file
 inline fileio_result save_binary(const string& filename, const vector<byte>& data) {
   auto fs = fopen(filename.c_str(), "wb");
-  if (!fs) throw std::runtime_error("cannot open file " + filename);
+  if (!fs) return {fileio_status::file_not_found};
   if (fwrite(data.data(), 1, data.size(), fs) != data.size()) {
     fclose(fs);
-    throw std::runtime_error("cannot write file " + filename);
+    return {fileio_status::io_error};
   }
   fclose(fs);
-  return fileio_ok();
+  return {fileio_status::ok};
 }
 
 }  // namespace yocto
