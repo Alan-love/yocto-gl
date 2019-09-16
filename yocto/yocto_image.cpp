@@ -1993,6 +1993,23 @@ bool save_image(
   }
 }
 
+bool load_image(const string& filename, image<vec4f>& img) {
+  auto err = ""s;
+  return load_image(filename, img, err);
+}
+bool save_image(const string& filename, const image<vec4f>& img) {
+  auto err = ""s;
+  return save_image(filename, img, err);
+}
+bool load_image(const string& filename, image<vec4b>& img) {
+  auto err = ""s;
+  return load_image(filename, img, err);
+}
+bool save_image(const string& filename, const image<vec4b>& img) {
+  auto err = ""s;
+  return save_image(filename, img, err);
+}
+
 }  // namespace yocto
 
 // -----------------------------------------------------------------------------

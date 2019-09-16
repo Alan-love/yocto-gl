@@ -286,6 +286,17 @@ bool save_scene(const string& filename, const yocto_scene& scene, string& error,
   }
 }
 
+bool load_scene_(
+    const string& filename, yocto_scene& scene, const load_params& params) {
+auto err = ""s;
+return load_scene(filename, scene, err, params);
+    }
+bool save_scene_(const string& filename, const yocto_scene& scene,
+    const save_params& params) {
+auto err = ""s;
+return save_scene(filename, scene, err, params);
+    }
+
 // Return the preset type and the remaining filename
 static inline bool is_preset_filename(const string& filename) {
   return filename.find("::yocto::") == 0;
