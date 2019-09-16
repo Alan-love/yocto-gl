@@ -208,37 +208,28 @@ static inline void parse_ply_value(string_view& str, size_t& value) {
 
 // get ply value either ascii or binary
 template <typename T, typename VT>
-static inline bool read_ply_value(file_wrapper& fs, bool big_endian, VT& tvalue) {
+static inline bool read_ply_value(
+    file_wrapper& fs, bool big_endian, VT& tvalue) {
   auto value = (T)0;
   if (fread(&value, sizeof(T), 1, fs.fs) != 1) return false;
   if (big_endian) value = swap_endian(value);
-  tvalue = (VT) value;
+  tvalue = (VT)value;
   return true;
 }
 template <typename VT>
 static inline bool read_ply_prop(
     file_wrapper& fs, bool big_endian, ply_type type, VT& value) {
   switch (type) {
-    case ply_type::i8:
-      return read_ply_value<int8_t>(fs, big_endian, value);
-    case ply_type::i16:
-      return read_ply_value<int16_t>(fs, big_endian, value);
-    case ply_type::i32:
-      return read_ply_value<int32_t>(fs, big_endian, value);
-    case ply_type::i64:
-      return read_ply_value<int64_t>(fs, big_endian, value);
-    case ply_type::u8:
-      return read_ply_value<uint8_t>(fs, big_endian, value);
-    case ply_type::u16:
-      return read_ply_value<uint16_t>(fs, big_endian, value);
-    case ply_type::u32:
-      return read_ply_value<uint32_t>(fs, big_endian, value);
-    case ply_type::u64:
-      return read_ply_value<uint64_t>(fs, big_endian, value);
-    case ply_type::f32:
-      return read_ply_value<float>(fs, big_endian, value);
-    case ply_type::f64:
-      return read_ply_value<double>(fs, big_endian, value);
+    case ply_type::i8: return read_ply_value<int8_t>(fs, big_endian, value);
+    case ply_type::i16: return read_ply_value<int16_t>(fs, big_endian, value);
+    case ply_type::i32: return read_ply_value<int32_t>(fs, big_endian, value);
+    case ply_type::i64: return read_ply_value<int64_t>(fs, big_endian, value);
+    case ply_type::u8: return read_ply_value<uint8_t>(fs, big_endian, value);
+    case ply_type::u16: return read_ply_value<uint16_t>(fs, big_endian, value);
+    case ply_type::u32: return read_ply_value<uint32_t>(fs, big_endian, value);
+    case ply_type::u64: return read_ply_value<uint64_t>(fs, big_endian, value);
+    case ply_type::f32: return read_ply_value<float>(fs, big_endian, value);
+    case ply_type::f64: return read_ply_value<double>(fs, big_endian, value);
   }
 }
 
@@ -351,14 +342,14 @@ bool read_ply_header(file_wrapper& fs, ply_format& format,
         prop.is_list = true;
         auto ename   = ""s;
         parse_ply_value(line, tname);
-        if(type_map.find(tname) == type_map.end()) return false;
+        if (type_map.find(tname) == type_map.end()) return false;
         prop.value_type = type_map.at(tname);
         parse_ply_value(line, tname);
-        if(type_map.find(tname) == type_map.end()) return false;
+        if (type_map.find(tname) == type_map.end()) return false;
         prop.list_type = type_map.at(tname);
       } else {
         prop.is_list = false;
-        if(type_map.find(tname) == type_map.end()) return false;
+        if (type_map.find(tname) == type_map.end()) return false;
         prop.value_type = type_map.at(tname);
       }
       parse_ply_value(line, prop.name);
@@ -396,11 +387,11 @@ bool read_ply_value_impl(file_wrapper& fs, ply_format format,
       auto& prop  = element.properties[pidx];
       auto& value = values[pidx];
       auto& list  = lists[pidx];
-      if(!parse_ply_prop(line, prop.value_type, value)) return false;
+      if (!parse_ply_prop(line, prop.value_type, value)) return false;
       if (prop.is_list) {
         list.resize((int)value);
         for (auto i = 0; i < (int)value; i++)
-          if(!parse_ply_prop(line, prop.list_type, list[i])) return false;
+          if (!parse_ply_prop(line, prop.list_type, list[i])) return false;
       }
     }
     return true;
@@ -409,13 +400,15 @@ bool read_ply_value_impl(file_wrapper& fs, ply_format format,
       auto& prop  = element.properties[pidx];
       auto& value = values[pidx];
       auto& list  = lists[pidx];
-      if(!read_ply_prop(
-          fs, format == ply_format::binary_big_endian, prop.value_type, value)) return false;
+      if (!read_ply_prop(fs, format == ply_format::binary_big_endian,
+              prop.value_type, value))
+        return false;
       if (prop.is_list) {
         list.resize((int)value);
         for (auto i = 0; i < (int)value; i++)
-          if(!read_ply_prop(fs, format == ply_format::binary_big_endian,
-              prop.list_type, list[i])) return false;
+          if (!read_ply_prop(fs, format == ply_format::binary_big_endian,
+                  prop.list_type, list[i]))
+            return false;
       }
     }
   }
@@ -457,21 +450,21 @@ static inline bool write_ply_binprop(
     file_wrapper& fs, bool big_endian, ply_type type, VT value) {
   switch (type) {
     case ply_type::i8: return write_ply_binprop<int8_t>(fs, big_endian, value);
-    case ply_type::i16:return 
-      write_ply_binprop<int16_t>(fs, big_endian, value);
-    case ply_type::i32:return 
-      write_ply_binprop<int32_t>(fs, big_endian, value);
-    case ply_type::i64:return 
-      write_ply_binprop<int64_t>(fs, big_endian, value);
-    case ply_type::u8: return write_ply_binprop<uint8_t>(fs, big_endian, value); 
-    case ply_type::u16:return 
-      write_ply_binprop<uint16_t>(fs, big_endian, value);
-    case ply_type::u32:return 
-      write_ply_binprop<uint32_t>(fs, big_endian, value);
-    case ply_type::u64:return 
-      write_ply_binprop<uint64_t>(fs, big_endian, value);
-    case ply_type::f32: return write_ply_binprop<float>(fs, big_endian, value); 
-    case ply_type::f64: return write_ply_binprop<double>(fs, big_endian, value); 
+    case ply_type::i16:
+      return write_ply_binprop<int16_t>(fs, big_endian, value);
+    case ply_type::i32:
+      return write_ply_binprop<int32_t>(fs, big_endian, value);
+    case ply_type::i64:
+      return write_ply_binprop<int64_t>(fs, big_endian, value);
+    case ply_type::u8: return write_ply_binprop<uint8_t>(fs, big_endian, value);
+    case ply_type::u16:
+      return write_ply_binprop<uint16_t>(fs, big_endian, value);
+    case ply_type::u32:
+      return write_ply_binprop<uint32_t>(fs, big_endian, value);
+    case ply_type::u64:
+      return write_ply_binprop<uint64_t>(fs, big_endian, value);
+    case ply_type::f32: return write_ply_binprop<float>(fs, big_endian, value);
+    case ply_type::f64: return write_ply_binprop<double>(fs, big_endian, value);
   }
 }
 
@@ -492,32 +485,38 @@ bool write_ply_header(file_wrapper& fs, ply_format format,
       {ply_type::f64, "double"},
   };
 
-  if(fprintf(fs.fs, "ply\n") < 0) return false;
+  if (fprintf(fs.fs, "ply\n") < 0) return false;
   switch (format) {
-    case ply_format::ascii: if(fprintf(fs.fs, "format ascii 1.0\n") < 0) return false; break;
+    case ply_format::ascii:
+      if (fprintf(fs.fs, "format ascii 1.0\n") < 0) return false;
+      break;
     case ply_format::binary_little_endian:
-      if(fprintf(fs.fs, "format binary_little_endian 1.0\n") < 0) return false;
+      if (fprintf(fs.fs, "format binary_little_endian 1.0\n") < 0) return false;
       break;
     case ply_format::binary_big_endian:
-      if(fprintf(fs.fs, "format binary_big_endian 1.0\n")<0) return false;
+      if (fprintf(fs.fs, "format binary_big_endian 1.0\n") < 0) return false;
       break;
   }
   for (auto& comment : comments)
-    if(fprintf(fs.fs, "comment %s\n", comment.c_str())<0) return false;
+    if (fprintf(fs.fs, "comment %s\n", comment.c_str()) < 0) return false;
   for (auto& elem : elements) {
-    if(fprintf(
-        fs.fs, "element %s %llu\n", elem.name.c_str(), (unsigned long long)elem.count)<0) return false;
+    if (fprintf(fs.fs, "element %s %llu\n", elem.name.c_str(),
+            (unsigned long long)elem.count) < 0)
+      return false;
     for (auto& prop : elem.properties) {
       if (prop.is_list) {
-        if(fprintf(fs.fs, "property list %s %s %s\n", type_map[prop.value_type].c_str(),
-                               type_map[prop.list_type].c_str(), prop.name.c_str())<0) return false;
+        if (fprintf(fs.fs, "property list %s %s %s\n",
+                type_map[prop.value_type].c_str(),
+                type_map[prop.list_type].c_str(), prop.name.c_str()) < 0)
+          return false;
       } else {
-        if(fprintf(fs.fs,
-            "property %s %s\n", type_map[prop.value_type].c_str(), prop.name.c_str())<0) return false;
+        if (fprintf(fs.fs, "property %s %s\n",
+                type_map[prop.value_type].c_str(), prop.name.c_str()) < 0)
+          return false;
       }
     }
   }
-  if(fprintf(fs.fs, "end_header\n") < 0) return false;
+  if (fprintf(fs.fs, "end_header\n") < 0) return false;
   return true;
 }
 
@@ -527,26 +526,30 @@ bool write_ply_value_impl(file_wrapper& fs, ply_format format,
   if (format == ply_format::ascii) {
     for (auto pidx = 0; pidx < element.properties.size(); pidx++) {
       auto& prop = element.properties[pidx];
-      if (pidx) if(!write_ply_text(fs, " ")) return false;
-      if(!write_ply_prop(fs, prop.value_type, values[pidx])) return false;
+      if (pidx)
+        if (!write_ply_text(fs, " ")) return false;
+      if (!write_ply_prop(fs, prop.value_type, values[pidx])) return false;
       if (prop.is_list) {
         for (auto i = 0; i < (int)lists[pidx].size(); i++) {
-          if (i) if(!write_ply_text(fs, " ")) return false;
-          if(!write_ply_prop(fs, prop.list_type, lists[pidx][i])) return false;
+          if (i)
+            if (!write_ply_text(fs, " ")) return false;
+          if (!write_ply_prop(fs, prop.list_type, lists[pidx][i])) return false;
         }
       }
-      if(!write_ply_text(fs, "\n")) return false;
+      if (!write_ply_text(fs, "\n")) return false;
     }
     return true;
   } else {
     for (auto pidx = 0; pidx < element.properties.size(); pidx++) {
       auto& prop = element.properties[pidx];
-      if(!write_ply_binprop(fs, format == ply_format::binary_big_endian,
-          prop.value_type, values[pidx])) return false;
+      if (!write_ply_binprop(fs, format == ply_format::binary_big_endian,
+              prop.value_type, values[pidx]))
+        return false;
       if (prop.is_list) {
         for (auto i = 0; i < (int)lists[pidx].size(); i++)
-          if(!write_ply_binprop(fs, format == ply_format::binary_big_endian,
-              prop.list_type, lists[pidx][i])) return false;
+          if (!write_ply_binprop(fs, format == ply_format::binary_big_endian,
+                  prop.list_type, lists[pidx][i]))
+            return false;
       }
     }
     return true;

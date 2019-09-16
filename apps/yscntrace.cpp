@@ -190,7 +190,7 @@ int main(int argc, const char* argv[]) {
       print_fatal("cannot save " + imfilename);
   } else {
     if (!save_image(imfilename, logo ? add_logo(tonemapb(render, tonemap_prms))
-                                      : tonemapb(render, tonemap_prms)))
+                                     : tonemapb(render, tonemap_prms)))
       print_fatal("cannot save " + imfilename);
   }
   save_timer.done();

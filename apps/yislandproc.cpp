@@ -875,8 +875,8 @@ void load_island_elements(const string& filename, const string& dirname,
   // rename materials and shapes
 }
 
-bool load_textures(
-    const string& filename, yocto_scene& scene, string& error, const load_params& params);
+bool load_textures(const string& filename, yocto_scene& scene, string& error,
+    const load_params& params);
 
 void load_island_scene(
     const string& filename, yocto_scene& scene, const load_params& params) {

@@ -472,7 +472,8 @@ namespace yocto {
 
 // Loads/saves a 1 channel volume.
 bool load_volume(const string& filename, volume<float>& vol, string& error);
-bool save_volume(const string& filename, const volume<float>& vol, string& error);
+bool save_volume(
+    const string& filename, const volume<float>& vol, string& error);
 bool load_volume(const string& filename, volume<float>& vol);
 bool save_volume(const string& filename, const volume<float>& vol);
 

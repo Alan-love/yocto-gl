@@ -1826,8 +1826,8 @@ static inline bool save_pfm(
 }
 
 // Result of file io operations.
-static inline bool set_imageio_error(string& error,
-    const string& filename, bool save, const string& msg) {
+static inline bool set_imageio_error(
+    string& error, const string& filename, bool save, const string& msg) {
   error = (save ? "error saving " : "error loading ") + filename + ": " + msg;
   return false;
 }
@@ -1877,13 +1877,13 @@ bool is_hdr_filename(const string& filename) {
 
 // Loads an hdr image.
 bool load_image(const string& filename, image<vec4f>& img, string& error) {
-  if (is_preset_filename(filename)) return load_image_preset(filename, img, error);
+  if (is_preset_filename(filename))
+    return load_image_preset(filename, img, error);
   auto ext = fs::path(filename).extension().string();
   if (ext == ".exr" || ext == ".EXR") {
     auto width = 0, height = 0;
     auto pixels = (float*)nullptr;
-    if (LoadEXR(
-            &pixels, &width, &height, filename.c_str(), nullptr) < 0)
+    if (LoadEXR(&pixels, &width, &height, filename.c_str(), nullptr) < 0)
       return set_imageio_error(error, filename, false, "io error");
     if (!pixels) return set_imageio_error(error, filename, false, "io error");
     img = image{{width, height}, (const vec4f*)pixels};
@@ -1914,7 +1914,8 @@ bool load_image(const string& filename, image<vec4f>& img, string& error) {
 }
 
 // Saves an hdr image.
-bool save_image(const string& filename, const image<vec4f>& img, string& error) {
+bool save_image(
+    const string& filename, const image<vec4f>& img, string& error) {
   auto ext = fs::path(filename).extension().string();
   if (ext == ".hdr" || ext == ".HDR") {
     if (!stbi_write_hdr(filename.c_str(), img.size().x, img.size().y, 4,
@@ -1940,7 +1941,8 @@ bool save_image(const string& filename, const image<vec4f>& img, string& error) 
 
 // Loads an ldr image.
 bool load_image(const string& filename, image<vec4b>& img, string& error) {
-  if (is_preset_filename(filename)) return load_image_preset(filename, img, error);
+  if (is_preset_filename(filename))
+    return load_image_preset(filename, img, error);
   auto ext = fs::path(filename).extension().string();
   if (ext == ".png" || ext == ".PNG" || ext == ".jpg" || ext == ".JPG" ||
       ext == ".tga" || ext == ".TGA" || ext == ".bmp" || ext == ".BMP") {
@@ -1961,7 +1963,8 @@ bool load_image(const string& filename, image<vec4b>& img, string& error) {
 }
 
 // Saves an ldr image.
-bool save_image(const string& filename, const image<vec4b>& img, string& error) {
+bool save_image(
+    const string& filename, const image<vec4b>& img, string& error) {
   auto ext = fs::path(filename).extension().string();
   if (ext == ".png" || ext == ".PNG") {
     if (!stbi_write_png(filename.c_str(), img.size().x, img.size().y, 4,
@@ -2145,7 +2148,8 @@ bool load_volume(const string& filename, volume<float>& vol, string& error) {
 }
 
 // Saves volume data in binary format.
-bool save_volume(const string& filename, const volume<float>& vol, string& error) {
+bool save_volume(
+    const string& filename, const volume<float>& vol, string& error) {
   if (!save_yvol(filename.c_str(), vol.size().x, vol.size().y, vol.size().z, 1,
           vol.data()))
     return set_imageio_error(error, filename, true, "io error");

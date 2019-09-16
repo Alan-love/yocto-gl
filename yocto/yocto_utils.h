@@ -459,8 +459,8 @@ inline bool exists_file(const string& filename) {
 namespace yocto {
 
 // Result of file io operations.
-inline bool set_fileio_error(string& error,
-    const string& filename, bool save, const string& msg) {
+inline bool set_fileio_error(
+    string& error, const string& filename, bool save, const string& msg) {
   error = (save ? "error saving " : "error loading ") + filename + ": " + msg;
   return false;
 }
@@ -483,7 +483,8 @@ inline bool load_text(const string& filename, string& str, string& error) {
 }
 
 // Save a text file
-inline bool save_text(const string& filename, const string& str, string& error) {
+inline bool save_text(
+    const string& filename, const string& str, string& error) {
   auto fs = fopen(filename.c_str(), "wt");
   if (!fs) return set_fileio_error(error, filename, true, "file not found");
   if (fprintf(fs, "%s", str.c_str()) < 0) {
@@ -495,7 +496,8 @@ inline bool save_text(const string& filename, const string& str, string& error) 
 }
 
 // Load a binary file
-inline bool load_binary(const string& filename, vector<byte>& data, string& error) {
+inline bool load_binary(
+    const string& filename, vector<byte>& data, string& error) {
   // https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c
   auto fs = fopen(filename.c_str(), "rb");
   if (!fs) return set_fileio_error(error, filename, false, "file not found");
@@ -543,8 +545,7 @@ inline bool load_binary(const string& filename, vector<byte>& data) {
 }
 
 // Save a binary file
-inline bool save_binary(
-    const string& filename, const vector<byte>& data) {
+inline bool save_binary(const string& filename, const vector<byte>& data) {
   auto error = ""s;
   return save_binary(filename, data, error);
 }

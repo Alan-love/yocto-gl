@@ -73,13 +73,13 @@ struct save_params {
 };
 
 // Load/save a scene in the supported formats.
-bool load_scene(
-    const string& filename, yocto_scene& scene, string& error, const load_params& params = {});
-bool save_scene(const string& filename, const yocto_scene& scene, string& error, 
+bool load_scene(const string& filename, yocto_scene& scene, string& error,
+    const load_params& params = {});
+bool save_scene(const string& filename, const yocto_scene& scene, string& error,
     const save_params& params = {});
 bool load_scene_(
     const string& filename, yocto_scene& scene, const load_params& params = {});
-bool save_scene_(const string& filename, const yocto_scene& scene, 
+bool save_scene_(const string& filename, const yocto_scene& scene,
     const save_params& params = {});
 
 }  // namespace yocto
