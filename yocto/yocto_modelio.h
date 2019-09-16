@@ -370,15 +370,15 @@ struct yaml_value {
   array<double, 16> array_  = {};
 };
 
-// Load Yaml properties
+// Load Yaml properties. On error, returns false and set error to true.
 bool read_yaml_property(file_wrapper& fs, string& group, string& key,
-    bool& newobj, yaml_value& value);
+    bool& newobj, yaml_value& value, bool& error);
 
-// Write Yaml properties
-void write_yaml_comment(file_wrapper& fs, const string& comment);
-void write_yaml_property(file_wrapper& fs, const string& object,
+// Write Yaml properties. Returns false on error.
+bool write_yaml_comment(file_wrapper& fs, const string& comment);
+bool write_yaml_property(file_wrapper& fs, const string& object,
     const string& key, bool newobj, const yaml_value& value);
-void write_yaml_object(file_wrapper& fs, const string& object);
+bool write_yaml_object(file_wrapper& fs, const string& object);
 
 // type-cheked yaml value access
 void get_yaml_value(const yaml_value& yaml, string& value);

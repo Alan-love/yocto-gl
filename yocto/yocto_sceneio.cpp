@@ -711,7 +711,8 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
   auto key    = ""s;
   auto newobj = false;
   auto value  = yaml_value{};
-  while (read_yaml_property(fs, group, key, newobj, value)) {
+  auto yerror = false;
+  while (read_yaml_property(fs, group, key, newobj, value, yerror)) {
     if (group.empty()) {
       throw std::runtime_error("bad yaml");
     }

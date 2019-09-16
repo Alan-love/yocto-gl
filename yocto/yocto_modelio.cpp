@@ -1497,10 +1497,10 @@ static inline void remove_yaml_comment(
   str.remove_suffix(cpy.size());
 }
 
-static inline void parse_yaml_varname(string_view& str, string_view& value) {
+static inline bool parse_yaml_varname(string_view& str, string_view& value) {
   skip_whitespace(str);
-  if (str.empty()) throw std::runtime_error("cannot parse value");
-  if (!is_alpha(str.front())) throw std::runtime_error("cannot parse value");
+  if (str.empty()) return false;
+  if (!is_alpha(str.front())) return false;
   auto pos = 0;
   while (is_alpha(str[pos]) || str[pos] == '_' || is_digit(str[pos])) {
     pos += 1;
@@ -1508,60 +1508,68 @@ static inline void parse_yaml_varname(string_view& str, string_view& value) {
   }
   value = str.substr(0, pos);
   str.remove_prefix(pos);
+  return true;
 }
-static inline void parse_yaml_varname(string_view& str, string& value) {
+static inline bool parse_yaml_varname(string_view& str, string& value) {
   auto view = ""sv;
-  parse_yaml_varname(str, view);
+  if(!parse_yaml_varname(str, view)) return false;
   value = string{view};
+  return true;
 }
 
-inline void parse_yaml_value(string_view& str, string_view& value) {
+static inline bool parse_yaml_value(string_view& str, string_view& value) {
   skip_whitespace(str);
-  if (str.empty()) throw std::runtime_error("cannot parse value");
+  if (str.empty()) return false;
   if (str.front() != '"') {
     auto cpy = str;
     while (!cpy.empty() && !is_space(cpy.front())) cpy.remove_prefix(1);
     value = str;
     value.remove_suffix(cpy.size());
     str.remove_prefix(str.size() - cpy.size());
+    return true;
   } else {
-    if (str.front() != '"') throw std::runtime_error("cannot parse value");
+    if (str.front() != '"') return false;
     str.remove_prefix(1);
-    if (str.empty()) throw std::runtime_error("cannot parse value");
+    if (str.empty()) return false;
     auto cpy = str;
     while (!cpy.empty() && cpy.front() != '"') cpy.remove_prefix(1);
-    if (cpy.empty()) throw std::runtime_error("cannot parse value");
+    if (cpy.empty()) return false;
     value = str;
     value.remove_suffix(cpy.size());
     str.remove_prefix(str.size() - cpy.size());
     str.remove_prefix(1);
+    return true;
   }
 }
-inline void parse_yaml_value(string_view& str, string& value) {
+static inline bool parse_yaml_value(string_view& str, string& value) {
   auto valuev = ""sv;
-  parse_yaml_value(str, valuev);
+  if(!parse_yaml_value(str, valuev)) return false;
   value = string{valuev};
+  return true;
 }
-inline void parse_yaml_value(string_view& str, int& value) {
+static inline bool parse_yaml_value(string_view& str, int& value) {
   skip_whitespace(str);
   char* end = nullptr;
   value     = (int)strtol(str.data(), &end, 10);
-  if (str == end) throw std::runtime_error("cannot parse value");
+  if (str == end) return false;
   str.remove_prefix(end - str.data());
+  return true;
 }
-inline void parse_yaml_value(string_view& str, float& value) {
+static inline bool parse_yaml_value(string_view& str, float& value) {
   skip_whitespace(str);
   char* end = nullptr;
   value     = strtof(str.data(), &end);
-  if (str == end) throw std::runtime_error("cannot parse value");
+  if (str == end) return false;
   str.remove_prefix(end - str.data());
+  return true;
 }
-inline void parse_yaml_value(string_view& str, double& value) {
+static inline bool parse_yaml_value(string_view& str, double& value) {
   skip_whitespace(str);
   char* end = nullptr;
   value     = strtod(str.data(), &end);
-  if (str == end) throw std::runtime_error("cannot parse value");
+  if (str == end) return false;
   str.remove_prefix(end - str.data());
+  return true;
 }
 
 // parse yaml value
@@ -1638,21 +1646,21 @@ yaml_value make_yaml_value(const frame3f& value) {
   return yaml;
 }
 
-void parse_yaml_value(string_view& str, yaml_value& value) {
+static bool parse_yaml_value(string_view& str, yaml_value& value) {
   trim_whitespace(str);
-  if (str.empty()) throw std::runtime_error("bad yaml");
+  if (str.empty()) return false;
   if (str.front() == '[') {
     str.remove_prefix(1);
     value.type   = yaml_value_type::array;
     value.number = 0;
     while (!str.empty()) {
       skip_whitespace(str);
-      if (str.empty()) throw std::runtime_error("bad yaml");
+      if (str.empty()) return false;
       if (str.front() == ']') {
         str.remove_prefix(1);
         break;
       }
-      if (value.number >= 16) throw std::runtime_error("array too large");
+      if (value.number >= 16) return false;
       parse_yaml_value(str, value.array_[(int)value.number]);
       value.number += 1;
       skip_whitespace(str);
@@ -1663,27 +1671,30 @@ void parse_yaml_value(string_view& str, yaml_value& value) {
         str.remove_prefix(1);
         break;
       } else {
-        throw std::runtime_error("bad yaml");
+        return false;
       }
     }
   } else if (is_digit(str.front()) || str.front() == '-' ||
              str.front() == '+') {
     value.type = yaml_value_type::number;
-    parse_yaml_value(str, value.number);
+    return parse_yaml_value(str, value.number);
   } else {
     value.type = yaml_value_type::string;
-    parse_yaml_value(str, value.string_);
+    if(!parse_yaml_value(str, value.string_)) return false;
     if (value.string_ == "true" || value.string_ == "false") {
       value.type    = yaml_value_type::boolean;
       value.boolean = value.string_ == "true";
     }
+    return true;
   }
   skip_whitespace(str);
   if (!str.empty() && !is_whitespace(str)) throw std::runtime_error("bad yaml");
 }
 
 bool read_yaml_property(file_wrapper& fs, string& group, string& key,
-    bool& newobj, yaml_value& value) {
+    bool& newobj, yaml_value& value, bool& error) {
+  // set error
+  auto set_error = [&error]() { error = true; return false; };
   // read the file line by line
   char buffer[4096];
   while (read_line(fs, buffer, sizeof(buffer))) {
@@ -1696,9 +1707,9 @@ bool read_yaml_property(file_wrapper& fs, string& group, string& key,
     // peek commands
     if (is_space(line.front())) {
       // indented property
-      if (group == "") throw std::runtime_error("bad yaml");
+      if (group == "") return set_error();
       skip_whitespace(line);
-      if (line.empty()) throw std::runtime_error("bad yaml");
+      if (line.empty()) return set_error();
       if (line.front() == '-') {
         newobj = true;
         line.remove_prefix(1);
@@ -1706,23 +1717,23 @@ bool read_yaml_property(file_wrapper& fs, string& group, string& key,
       } else {
         newobj = false;
       }
-      parse_yaml_varname(line, key);
+      if(!parse_yaml_varname(line, key)) return set_error();
       skip_whitespace(line);
       if (line.empty() || line.front() != ':')
-        throw std::runtime_error("bad yaml");
+        return set_error();
       line.remove_prefix(1);
-      parse_yaml_value(line, value);
+      if(!parse_yaml_value(line, value)) return set_error();
       return true;
     } else if (is_alpha(line.front())) {
       // new group
-      parse_yaml_varname(line, key);
+      if(!parse_yaml_varname(line, key)) return set_error();
       skip_whitespace(line);
       if (line.empty() || line.front() != ':')
-        throw std::runtime_error("bad yaml");
+        return set_error();
       line.remove_prefix(1);
       if (!line.empty() && !is_whitespace(line)) {
         group = "";
-        parse_yaml_value(line, value);
+        if(!parse_yaml_value(line, value)) return set_error();
         return true;
       } else {
         group = key;
@@ -1730,55 +1741,58 @@ bool read_yaml_property(file_wrapper& fs, string& group, string& key,
         return true;
       }
     } else {
-      throw std::runtime_error("bad yaml");
+      return set_error();
     }
   }
   return false;
 }
 
-void write_yaml_comment(file_wrapper& fs, const string& comment) {
+bool write_yaml_comment(file_wrapper& fs, const string& comment) {
   auto lines = split_string(comment, "\n");
   for (auto& line : lines) {
-    checked_fprintf(fs, "# %s\n", line.c_str());
+    if(fprintf(fs.fs, "# %s\n", line.c_str()) < 0) return false;
   }
-  checked_fprintf(fs, "\n");
+  if(fprintf(fs.fs, "\n") < 0) return false;
+  return true;
 }
 
 // Save yaml property
-void write_yaml_property(file_wrapper& fs, const string& object,
+bool write_yaml_property(file_wrapper& fs, const string& object,
     const string& key, bool newobj, const yaml_value& value) {
   if (key.empty()) {
-    checked_fprintf(fs, "\n%s:\n", object.c_str());
+    if(fprintf(fs.fs, "\n%s:\n", object.c_str()) < 0) return false;
+    return true;
   } else {
     if (!object.empty()) {
-      checked_fprintf(fs, (newobj ? "  - " : "    "));
+      if(fprintf(fs.fs, (newobj ? "  - " : "    ")) < 0) return false;
     }
-    checked_fprintf(fs, "%s: ", key.c_str());
+    if(fprintf(fs.fs, "%s: ", key.c_str()) < 0) return false;
     switch (value.type) {
       case yaml_value_type::number:
-        checked_fprintf(fs, "%g", value.number);
+        if(fprintf(fs.fs, "%g", value.number) < 0) return false;
         break;
       case yaml_value_type::boolean:
-        checked_fprintf(fs, "%s", value.boolean ? "true" : "false");
+        if(fprintf(fs.fs, "%s", value.boolean ? "true" : "false") < 0) return false;
         break;
       case yaml_value_type::string:
-        checked_fprintf(fs, "%s", value.string_.c_str());
+        if(fprintf(fs.fs, "%s", value.string_.c_str()) < 0) return false;
         break;
       case yaml_value_type::array:
-        checked_fprintf(fs, "[ ");
+        if(fprintf(fs.fs, "[ ") < 0) return false;
         for (auto i = 0; i < value.number; i++) {
-          if (i) checked_fprintf(fs, ", ");
-          checked_fprintf(fs, "%g", value.array_[i]);
+          if (i) if(fprintf(fs.fs, ", ") < 0) return false;
+          if(fprintf(fs.fs, "%g", value.array_[i]) < 0) return false;
         }
-        checked_fprintf(fs, " ]");
+        if(fprintf(fs.fs, " ]") < 0) return false;
         break;
     }
-    checked_fprintf(fs, "\n", key.c_str());
+    if(fprintf(fs.fs, "\n") < 0) return false;
+    return true;
   }
 }
 
-void write_yaml_object(file_wrapper& fs, const string& object) {
-  checked_fprintf(fs, "\n%s:\n", object.c_str());
+bool write_yaml_object(file_wrapper& fs, const string& object) {
+  return fprintf(fs.fs, "\n%s:\n", object.c_str()) > 0;
 }
 
 }  // namespace yocto
