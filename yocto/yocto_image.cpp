@@ -1991,8 +1991,6 @@ imageio_result save_imageb(const string& filename, const image<vec4b>& img) {
 // -----------------------------------------------------------------------------
 namespace yocto {
 
-namespace impl {
-
 // Volume load
 static inline float* load_yvol(
     const char* filename, int* w, int* h, int* d, int* nc, int req) {
@@ -2131,34 +2129,18 @@ static inline bool save_yvol(
 }
 
 // Loads volume data from binary format.
-void load_volume(const string& filename, volume<float>& vol) {
+imageio_result load_volume(const string& filename, volume<float>& vol) {
   auto width = 0, height = 0, depth = 0, ncomp = 0;
   auto voxels = load_yvol(filename.c_str(), &width, &height, &depth, &ncomp, 1);
-  if (!voxels) {
-    throw std::runtime_error("error loading volume " + filename);
-  }
+  if (!voxels) return {imageio_status::io_error};
   vol = volume{{width, height, depth}, (const float*)voxels};
   delete[] voxels;
-}
+return {imageio_status::ok};}
 
 // Saves volume data in binary format.
-void save_volume(const string& filename, const volume<float>& vol) {
+imageio_result save_volume(const string& filename, const volume<float>& vol) {
   if (!save_yvol(filename.c_str(), vol.size().x, vol.size().y, vol.size().z, 1,
-          vol.data())) {
-    throw std::runtime_error("error saving volume " + filename);
-  }
-}
-
-}  // namespace impl
-
-// Loads volume data from binary format.
-void load_volume(const string& filename, volume<float>& vol) {
-  impl::load_volume(filename, vol);
-}
-
-// Saves volume data in binary format.
-void save_volume(const string& filename, const volume<float>& vol) {
-  impl::save_volume(filename, vol);
-}
+          vol.data())) return {imageio_status::io_error};
+return {imageio_status::ok};}
 
 }  // namespace yocto

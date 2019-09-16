@@ -477,8 +477,8 @@ void make_volpreset(volume<float>& vol, const string& type);
 namespace yocto {
 
 // Loads/saves a 1 channel volume.
-void load_volume(const string& filename, volume<float>& vol);
-void save_volume(const string& filename, const volume<float>& vol);
+imageio_result load_volume(const string& filename, volume<float>& vol);
+imageio_result save_volume(const string& filename, const volume<float>& vol);
 
 }  // namespace yocto
 

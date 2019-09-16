@@ -48,12 +48,30 @@
 
 #include <atomic>
 #include "yocto_scene.h"
+#include "yocto_shape.h"
 
 // -----------------------------------------------------------------------------
 // SCENE IO FUNCTIONS
 // -----------------------------------------------------------------------------
 
 namespace yocto {
+
+// Result of file io operations.
+enum struct sceneio_status {
+  ok, file_not_found, io_error, bad_data, unsupported_format, bad_texture, bad_shape
+};
+struct [[nodiscard]] sceneio_result {
+  sceneio_status status = sceneio_status::ok;
+  int line = 0;
+  imageio_status texture_status = imageio_status::ok;
+  int texture_index = -1;
+  shapeio_status shape_status = shapeio_status::ok;
+  int shape_index = -1;
+  shapeio_status subdiv_status = shapeio_status::ok;
+  int subdiv_index = -1;
+
+  operator bool() const { return status == sceneio_status::ok; }
+};
 
 // Scene load params
 struct load_params {
@@ -72,30 +90,22 @@ struct save_params {
 };
 
 // Load/save a scene in the supported formats.
-void load_scene(
+sceneio_result load_scene(
     const string& filename, yocto_scene& scene, const load_params& params = {});
-void save_scene(const string& filename, const yocto_scene& scene,
+sceneio_result save_scene(const string& filename, const yocto_scene& scene,
     const save_params& params = {});
 
 // Load/save scene textures
-void load_texture(yocto_texture& texture, const string& dirname);
-void save_texture(const yocto_texture& texture, const string& dirname);
-void load_voltexture(yocto_voltexture& texture, const string& dirname);
-void save_voltexture(const yocto_voltexture& texture, const string& dirname);
-void load_textures(
-    yocto_scene& scene, const string& dirname, const load_params& params);
-void save_textures(
-    const yocto_scene& scene, const string& dirname, const save_params& params);
+imageio_result load_texture(yocto_texture& texture, const string& dirname);
+imageio_result save_texture(const yocto_texture& texture, const string& dirname);
+imageio_result load_voltexture(yocto_voltexture& texture, const string& dirname);
+imageio_result save_voltexture(const yocto_voltexture& texture, const string& dirname);
 
 // Load/save scene shapes
-void load_shape(yocto_shape& shape, const string& dirname);
-void save_shape(const yocto_shape& shape, const string& dirname);
-void load_subdiv(yocto_subdiv& subdiv, const string& dirname);
-void save_subdiv(const yocto_subdiv& subdiv, const string& dirname);
-void load_shapes(
-    yocto_scene& scene, const string& dirname, const load_params& params);
-void save_shapes(
-    const yocto_scene& scene, const string& dirname, const save_params& params);
+shapeio_result load_shape(yocto_shape& shape, const string& dirname);
+shapeio_result save_shape(const yocto_shape& shape, const string& dirname);
+shapeio_result load_subdiv(yocto_subdiv& subdiv, const string& dirname);
+shapeio_result save_subdiv(const yocto_subdiv& subdiv, const string& dirname);
 
 }  // namespace yocto
 
