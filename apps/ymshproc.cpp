@@ -122,7 +122,7 @@ int main(int argc, const char** argv) {
   if (!save_shape(output, shape.points, shape.lines, shape.triangles,
           shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
           shape.positions, shape.normals, shape.texcoords, shape.colors,
-          shape.radius))
+          shape.radius, false))
     print_fatal("cannot save " + output);
   save_timer.done();
 

@@ -3035,7 +3035,7 @@ bool save_shape(const string& filename, const vector<int>& points,
     const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
     const vector<vec3f>& positions, const vector<vec3f>& normals,
     const vector<vec2f>& texcoords, const vector<vec4f>& colors,
-    const vector<float>& radius, string& error, bool ascii) {
+    const vector<float>& radius, bool ascii, string& error) {
   auto ext = fs::path(filename).extension().string();
   if (ext == ".ply" || ext == ".PLY") {
     return save_ply_shape(filename, points, lines, triangles, quads, quadspos,
@@ -3069,7 +3069,7 @@ bool save_shape(const string& filename, const vector<int>& points,
     const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
     const vector<vec3f>& positions, const vector<vec3f>& normals,
     const vector<vec2f>& texcoords, const vector<vec4f>& colors,
-    const vector<float>& radius) {
+    const vector<float>& radius, bool ascii) {
 auto err = ""s;
 return save_shape(filename, points,
     lines, triangles,
@@ -3077,7 +3077,7 @@ return save_shape(filename, points,
     quadsnorm, quadstexcoord,
     positions, normals,
     texcoords, colors,
-    radius, err);
+    radius, ascii, err);
     }
 
 static bool load_ply_shape(const string& filename, vector<int>& points,

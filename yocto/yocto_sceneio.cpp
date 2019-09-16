@@ -522,7 +522,7 @@ bool save_shape(
   return save_shape(fs::path(dirname) / shape.uri, shape.points, shape.lines,
       shape.triangles, shape.quads, shape.quadspos, shape.quadsnorm,
       shape.quadstexcoord, shape.positions, shape.normals, shape.texcoords,
-      shape.colors, shape.radius, error);
+      shape.colors, shape.radius, false, error);
 }
 
 bool load_subdiv(yocto_subdiv& subdiv, const string& dirname, string& error) {
@@ -552,7 +552,7 @@ bool save_subdiv(
   return save_shape(fs::path(dirname) / subdiv.uri, subdiv.points, subdiv.lines,
       subdiv.triangles, subdiv.quads, subdiv.quadspos, subdiv.quadsnorm,
       subdiv.quadstexcoord, subdiv.positions, subdiv.normals, subdiv.texcoords,
-      subdiv.colors, subdiv.radius, error);
+      subdiv.colors, subdiv.radius, false, error);
 }
 
 // Load json meshes
@@ -2123,7 +2123,7 @@ static bool save_ply_scene(const string& filename, const yocto_scene& scene,
   if (!save_shape(filename, shape.points, shape.lines, shape.triangles,
           shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
           shape.positions, shape.normals, shape.texcoords, shape.colors,
-          shape.radius, err)) {
+          shape.radius, false, err)) {
     return set_sceneio_error(error, filename, true, "error in shape", err);
   }
 
@@ -4129,7 +4129,7 @@ static bool save_pbrt_scene(const string& filename, const yocto_scene& scene,
             shape.points, shape.lines, shape.triangles, shape.quads,
             shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
             shape.positions, shape.normals, shape.texcoords, shape.colors,
-            shape.radius, err)) {
+            shape.radius, false, err)) {
       return set_sceneio_error(error, filename, true, "error in shape", err);
     }
   }
