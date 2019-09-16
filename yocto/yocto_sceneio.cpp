@@ -1262,7 +1262,7 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
   while (read_mtl_command(fs, command, value, texture, oerror)) {
     if (command == mtl_command::material) {
       auto& material = scene.materials.emplace_back();
-      get_obj_value(value, material.uri);
+      if(!get_obj_value(value, material.uri)) return set_type_error();
       mmap[material.uri] = (int)scene.materials.size() - 1;
       ptype              = parsing_type::material;
       continue;
@@ -1273,25 +1273,25 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
       auto& material = scene.materials.back();
       switch (command) {
         case mtl_command::emission:
-          get_obj_value(value, material.emission);
+          if(!get_obj_value(value, material.emission)) return set_type_error();
           break;
         case mtl_command::diffuse:
-          get_obj_value(value, material.diffuse);
+          if(!get_obj_value(value, material.diffuse)) return set_type_error();
           break;
         case mtl_command::specular:
-          get_obj_value(value, material.specular);
+          if(!get_obj_value(value, material.specular)) return set_type_error();
           break;
         case mtl_command::transmission:
-          get_obj_value(value, material.transmission);
+          if(!get_obj_value(value, material.transmission)) return set_type_error();
           break;
         case mtl_command::exponent:
-          get_obj_value(value, material.roughness);
+          if(!get_obj_value(value, material.roughness)) return set_type_error();
           material.roughness = pow(2 / (material.roughness + 2), 1 / 4.0f);
           if (material.roughness < 0.01f) material.roughness = 0;
           if (material.roughness > 0.99f) material.roughness = 1;
           break;
         case mtl_command::opacity:
-          get_obj_value(value, material.opacity);
+          if(!get_obj_value(value, material.opacity)) return set_type_error();
           break;
         case mtl_command::emission_map:
           material.emission_tex = add_texture(texture, false);
@@ -1312,10 +1312,10 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
           material.normal_tex = add_texture(texture, true);
           break;
         case mtl_command::pbr_roughness:
-          get_obj_value(value, material.roughness);
+          if(!get_obj_value(value, material.roughness)) return set_type_error();
           break;
         case mtl_command::pbr_metallic:
-          get_obj_value(value, material.metallic);
+          if(!get_obj_value(value, material.metallic)) return set_type_error();
           break;
         case mtl_command::pbr_roughness_map:
           material.roughness_tex = add_texture(texture, true);
@@ -1324,22 +1324,22 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
           material.metallic_tex = add_texture(texture, true);
           break;
         case mtl_command::vol_transmission:
-          get_obj_value(value, material.voltransmission);
+          if(!get_obj_value(value, material.voltransmission)) return set_type_error();
           break;
         case mtl_command::vol_meanfreepath:
-          get_obj_value(value, material.volmeanfreepath);
+          if(!get_obj_value(value, material.volmeanfreepath)) return set_type_error();
           break;
         case mtl_command::vol_scattering:
-          get_obj_value(value, material.volscatter);
+          if(!get_obj_value(value, material.volscatter)) return set_type_error();
           break;
         case mtl_command::vol_emission:
-          get_obj_value(value, material.volemission);
+          if(!get_obj_value(value, material.volemission)) return set_type_error();
           break;
         case mtl_command::vol_anisotropy:
-          get_obj_value(value, material.volanisotropy);
+          if(!get_obj_value(value, material.volanisotropy)) return set_type_error();
           break;
         case mtl_command::vol_scale:
-          get_obj_value(value, material.volscale);
+          if(!get_obj_value(value, material.volscale)) return set_type_error();
           break;
         case mtl_command::vol_scattering_map:
           material.subsurface_tex = add_texture(texture, false);
@@ -1362,6 +1362,9 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
   // errors
   auto set_parse_error = [&]() {
     return set_sceneio_error(error, filename, false, "parse error");
+  };
+  auto set_property_error = [&]() {
+    return set_sceneio_error(error, filename, false, "unknown property");
   };
   auto set_type_error = [&]() {
     return set_sceneio_error(error, filename, false, "type mismatch");
@@ -1407,13 +1410,13 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
   while (read_objx_command(fs, command, value, texture, oerror)) {
     if (command == objx_command::camera) {
       auto& camera = scene.cameras.emplace_back();
-      get_obj_value(value, camera.uri);
+      if(!get_obj_value(value, camera.uri)) return set_type_error();
       ptype = parsing_type::camera;
       continue;
     }
     if (command == objx_command::environment) {
       auto& environment = scene.environments.emplace_back();
-      get_obj_value(value, environment.uri);
+      if(!get_obj_value(value, environment.uri)) return set_type_error();
       ptype = parsing_type::environment;
       continue;
     }
@@ -1423,14 +1426,14 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
         first_instance = false;
       }
       auto& instance = scene.instances.emplace_back();
-      get_obj_value(value, instance.uri);
+      if(!get_obj_value(value, instance.uri)) return set_type_error();
       ptype         = parsing_type::instance;
       instances_idx = {(int)scene.instances.size() - 1};
       continue;
     }
     if (command == objx_command::procedural) {
       auto& shape = scene.shapes.emplace_back();
-      get_obj_value(value, shape.uri);
+      if(!get_obj_value(value, shape.uri)) return set_type_error();
       auto& instance = scene.instances.emplace_back();
       instance.uri   = shape.uri;
       instance.shape = (int)scene.shapes.size() - 1;
@@ -1443,27 +1446,27 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
     } else if (ptype == parsing_type::camera) {
       auto& camera = scene.cameras.back();
       switch (command) {
-        case objx_command::frame: get_obj_value(value, camera.frame); break;
+        case objx_command::frame: if(!get_obj_value(value, camera.frame)) return set_type_error(); break;
         case objx_command::ortho:
-          get_obj_value(value, camera.orthographic);
+          if(!get_obj_value(value, camera.orthographic)) return set_type_error();
           break;
-        case objx_command::width: get_obj_value(value, camera.film.x); break;
-        case objx_command::height: get_obj_value(value, camera.film.y); break;
-        case objx_command::lens: get_obj_value(value, camera.lens); break;
+        case objx_command::width: if(!get_obj_value(value, camera.film.x)) return set_type_error(); break;
+        case objx_command::height: if(!get_obj_value(value, camera.film.y)) return set_type_error(); break;
+        case objx_command::lens: if(!get_obj_value(value, camera.lens)) return set_type_error(); break;
         case objx_command::aperture:
-          get_obj_value(value, camera.aperture);
+          if(!get_obj_value(value, camera.aperture)) return set_type_error();
           break;
-        case objx_command::focus: get_obj_value(value, camera.focus); break;
+        case objx_command::focus: if(!get_obj_value(value, camera.focus)) return set_type_error(); break;
         default: throw std::runtime_error("bad objx"); break;
       }
     } else if (ptype == parsing_type::environment) {
       auto& environment = scene.environments.back();
       switch (command) {
         case objx_command::frame:
-          get_obj_value(value, environment.frame);
+          if(!get_obj_value(value, environment.frame)) return set_type_error();
           break;
         case objx_command::emission:
-          get_obj_value(value, environment.emission);
+          if(!get_obj_value(value, environment.emission)) return set_type_error();
           break;
         case objx_command::emission_map:
           environment.emission_tex = add_texture(texture, false);
@@ -1479,7 +1482,7 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
         } break;
         case objx_command::material: {
           auto name = ""s;
-          get_obj_value(value, name);
+          if(!get_obj_value(value, name)) return set_type_error();
           auto ist_material = mmap.at(name);
           for (auto& ist : instances_idx) {
             scene.instances[ist].material = ist_material;
@@ -1487,7 +1490,7 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
         } break;
         case objx_command::object: {
           auto name = ""s;
-          get_obj_value(value, name);
+          if(!get_obj_value(value, name)) return set_type_error();
           auto& shapes = object_shapes.at(name);
           if (instances_idx.size() != shapes.size()) {
             auto to_add = shapes.size() - instances_idx.size();
@@ -1508,10 +1511,10 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
       auto& shape    = scene.shapes.back();
       auto& instance = scene.instances.back();
       switch (command) {
-        case objx_command::frame: get_obj_value(value, instance.frame); break;
+        case objx_command::frame: if(!get_obj_value(value, instance.frame)) return set_type_error(); break;
         case objx_command::material: {
           auto name = ""s;
-          get_obj_value(value, name);
+          if(!get_obj_value(value, name)) return set_type_error();
           if (mmap.find(name) == mmap.end()) {
             throw std::runtime_error("missing material " + name);
           } else {
@@ -1520,7 +1523,7 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
         } break;
         case objx_command::object: {
           auto name = ""s;
-          get_obj_value(value, name);
+          if(!get_obj_value(value, name)) return set_type_error();
           if (name == "floor") {
             auto params         = proc_shape_params{};
             params.type         = proc_shape_params::type_t::floor;
