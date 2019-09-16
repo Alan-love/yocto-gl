@@ -1848,9 +1848,9 @@ static inline imageio_result load_image_preset(
   img.resize({1024, 1024});
   if (type == "images2") img.resize({2048, 1024});
   make_image_preset(img, type);
-  return imageio_ok();
+  return {imageio_status::ok};
   } catch(std::exception& e) {
-    return imageio_error(e.what());
+    return {imageio_status::bad_preset};
   }
 }
 static inline imageio_result load_image_preset(
@@ -1859,7 +1859,7 @@ static inline imageio_result load_image_preset(
   if(auto err = load_image_preset(filename, imgf); !err) return err;
   img.resize(imgf.size());
   rgb_to_srgb(img, imgf);
-  return imageio_ok();
+  return {imageio_status::ok};
 }
 
 // Check if an image is HDR based on filename.
@@ -1878,32 +1878,32 @@ imageio_result load_image(const string& filename, image<vec4f>& img) {
     if (auto error = LoadEXR(
             &pixels, &width, &height, filename.c_str(), nullptr);
         error < 0)
-      return imageio_error("error loading image " + filename);
-    if (!pixels) return imageio_error("error loading image " + filename);
+      return {imageio_status::io_error};
+    if (!pixels) return {imageio_status::io_error};
     img = image{{width, height}, (const vec4f*)pixels};
     free(pixels);
-    return imageio_ok();
+    return {imageio_status::ok};
   } else if (ext == ".pfm" || ext == ".PFM") {
     auto width = 0, height = 0, ncomp = 0;
     auto pixels = load_pfm(filename.c_str(), &width, &height, &ncomp, 4);
-    if (!pixels) return imageio_error("error loading image " + filename);
+    if (!pixels) return {imageio_status::io_error};
     img = image{{width, height}, (const vec4f*)pixels};
     delete[] pixels;
-    return imageio_ok();
+    return {imageio_status::ok};
   } else if (ext == ".hdr" || ext == ".HDR") {
     auto width = 0, height = 0, ncomp = 0;
     auto pixels = stbi_loadf(filename.c_str(), &width, &height, &ncomp, 4);
-    if (!pixels) return imageio_error("error loading image " + filename);
+    if (!pixels) return {imageio_status::io_error};
     img = image{{width, height}, (const vec4f*)pixels};
     free(pixels);
-    return imageio_ok();
+    return {imageio_status::ok};
   } else if (!is_hdr_filename(filename)) {
     auto imgb = image<vec4b>{};
     if(auto err = load_imageb(filename, imgb); !err) return err;
     srgb_to_rgb(img, imgb);
-    return imageio_ok();
+    return {imageio_status::ok};
   } else {
-    return imageio_error("unsupported image format " + ext);
+    return {imageio_status::unsupported_format};
   }
 }
 
@@ -1913,22 +1913,22 @@ imageio_result save_image(const string& filename, const image<vec4f>& img) {
   if (ext == ".hdr" || ext == ".HDR") {
     if (!stbi_write_hdr(filename.c_str(), img.size().x, img.size().y, 4,
             (float*)img.data()))
-      return imageio_error("error saving image " + filename);
-    return imageio_ok();
+      return {imageio_status::io_error};
+    return {imageio_status::ok};
   } else if (ext == ".pfm" || ext == ".PFM") {
     if (!save_pfm(filename.c_str(), img.size().x, img.size().y, 4,
             (float*)img.data()))
-      return imageio_error("error saving image " + filename);
-    return imageio_ok();
+      return {imageio_status::io_error};
+    return {imageio_status::ok};
   } else if (ext == ".exr" || ext == ".EXR") {
     if (SaveEXR((float*)img.data(), img.size().x, img.size().y, 4,
             filename.c_str()) < 0)
-      return imageio_error("error saving image " + filename);
-    return imageio_ok();
+      return {imageio_status::io_error};
+    return {imageio_status::ok};
   } else if (!is_hdr_filename(filename)) {
     return save_imageb(filename, rgb_to_srgbb(img));
   } else {
-    return imageio_error("unsupported image format " + ext);
+    return {imageio_status::io_error};
   }
 }
 
@@ -1940,17 +1940,17 @@ imageio_result load_imageb(const string& filename, image<vec4b>& img) {
       ext == ".tga" || ext == ".TGA" || ext == ".bmp" || ext == ".BMP") {
     auto width = 0, height = 0, ncomp = 0;
     auto pixels = stbi_load(filename.c_str(), &width, &height, &ncomp, 4);
-    if (!pixels) return imageio_error("error loading image " + filename);
+    if (!pixels) return {imageio_status::io_error};
     img = image{{width, height}, (const vec4b*)pixels};
     free(pixels);
-    return imageio_ok();
+    return {imageio_status::ok};
   } else if (is_hdr_filename(filename)) {
     auto imgf = image<vec4f>{};
     if(auto err = load_image(filename, imgf); !err) return err;
     img = rgb_to_srgbb(imgf);
-    return imageio_ok();
+    return {imageio_status::ok};
   } else {
-    return imageio_error("unsupported image format " + ext);
+    return {imageio_status::unsupported_format};
   }
 }
 
@@ -1960,27 +1960,27 @@ imageio_result save_imageb(const string& filename, const image<vec4b>& img) {
   if (ext == ".png" || ext == ".PNG") {
     if (!stbi_write_png(filename.c_str(), img.size().x, img.size().y, 4,
             img.data(), img.size().x * 4))
-      return imageio_error("error saving image " + filename);
-    return imageio_ok();
+      return {imageio_status::io_error};
+    return {imageio_status::ok};
   } else if (ext == ".jpg" || ext == ".JPG") {
     if (!stbi_write_jpg(
             filename.c_str(), img.size().x, img.size().y, 4, img.data(), 75))
-      return imageio_error("error saving image " + filename);
-    return imageio_ok();
+      return {imageio_status::io_error};
+    return {imageio_status::ok};
   } else if (ext == ".tga" || ext == ".TGA") {
     if (!stbi_write_tga(
             filename.c_str(), img.size().x, img.size().y, 4, img.data()))
-      return imageio_error("error saving image " + filename);
-    return imageio_ok();
+      return {imageio_status::io_error};
+    return {imageio_status::ok};
   } else if (ext == ".bmp" || ext == ".BMP") {
     if (!stbi_write_bmp(
             filename.c_str(), img.size().x, img.size().y, 4, img.data()))
-      return imageio_error("error saving image " + filename);
-    return imageio_ok();
+      return {imageio_status::io_error};
+    return {imageio_status::ok};
   } else if (is_hdr_filename(filename)) {
     return save_image(filename, srgb_to_rgb(img));
   } else {
-    return imageio_error("unsupported image format " + ext);
+    return {imageio_status::unsupported_format};
   }
 }
 

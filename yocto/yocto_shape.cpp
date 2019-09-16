@@ -3015,7 +3015,7 @@ shapeio_result load_shape(const string& filename, vector<int>& points,
       return load_cyhair_shape(
           filename, lines, positions, normals, texcoords, colors, radius);
     } else {
-      return shapeio_error("cannot load " + filename + ": unsupported extension");
+      return {shapeio_status::unsupported_format};
     }
 }
 
@@ -3036,7 +3036,7 @@ shapeio_result save_shape(const string& filename, const vector<int>& points,
       return save_obj_shape(filename, points, lines, triangles, quads, quadspos,
           quadsnorm, quadstexcoord, positions, normals, texcoords);
     } else {
-      return shapeio_error("cannot save " + filename + ": unsupported extension");
+      return {shapeio_status::unsupported_format};
     }
 }
 
@@ -3048,7 +3048,7 @@ static shapeio_result load_ply_shape(const string& filename, vector<int>& points
     vector<float>& radius, bool flip_texcoord) {
   // open ply
   auto fs = open_file(filename, "rb");
-  if(!fs) return shapeio_error("cannot load " + filename + ": file not found");
+  if(!fs) return {shapeio_status::file_not_found};
 
   // load elements
   auto format   = ply_format{};
@@ -3108,7 +3108,7 @@ static shapeio_result load_ply_shape(const string& filename, vector<int>& points
   }
 
   if (positions.empty())
-    return shapeio_error("cannot load " + filename + ": vertex positions not present");
+    return {shapeio_status::bad_data};
 
   // fix texture coordinated
   if (flip_texcoord && !texcoords.empty()) {
@@ -3117,7 +3117,7 @@ static shapeio_result load_ply_shape(const string& filename, vector<int>& points
 
   merge_triangles_and_quads(triangles, quads, false);
 
-  return shapeio_ok();
+  return {shapeio_status::ok};
 }
 
 // Save ply mesh
@@ -3142,7 +3142,7 @@ static shapeio_result save_ply_shape(const string& filename, const vector<int>& 
   }
 
   auto fs = open_file(filename, "wb");
-  if(!fs) return shapeio_error("cannot save " + filename + ": file not found");
+  if(!fs) return {shapeio_status::file_not_found};
 
   // format
   auto format = ply_format::binary_little_endian;
@@ -3294,7 +3294,7 @@ static shapeio_result save_ply_shape(const string& filename, const vector<int>& 
     }
   }
 
-  return shapeio_ok();
+  return {shapeio_status::ok};
 }
 
 // Load obj mesh
@@ -3306,7 +3306,7 @@ static shapeio_result load_obj_shape(const string& filename, vector<int>& points
     bool flip_texcoord) {
   // open obj
   auto fs = open_file(filename);
-  if(!fs) return shapeio_error("cannot load " + filename + ": file not found");
+  if(!fs) return {shapeio_status::file_not_found};
 
   // obj vertices
   std::deque<vec3f> opos      = std::deque<vec3f>();
@@ -3448,8 +3448,7 @@ static shapeio_result load_obj_shape(const string& filename, vector<int>& points
     }
   }
 
-  if (positions.empty())
-    throw std::runtime_error("vertex positions not present");
+  if (positions.empty()) return {shapeio_status::bad_data};
 
   // fix texture coordinated
   if (flip_texcoord && !texcoords.empty()) {
@@ -3461,7 +3460,7 @@ static shapeio_result load_obj_shape(const string& filename, vector<int>& points
     merge_triangles_and_quads(triangles, quads, false);
   }
 
-  return shapeio_ok();
+  return {shapeio_status::ok};
 }
 
 // Load ply mesh
@@ -3472,7 +3471,7 @@ static shapeio_result save_obj_shape(const string& filename, const vector<int>& 
     const vector<vec3f>& positions, const vector<vec3f>& normals,
     const vector<vec2f>& texcoords, bool flip_texcoord) {
   auto fs = open_file(filename, "w");
-  if(!fs) return shapeio_error("cannot save " + filename + ": file not found"); 
+  if(!fs) return {shapeio_status::file_not_found};
 
   write_obj_comment(
       fs, "Written by Yocto/GL\nhttps://github.com/xelatihy/yocto-gl\n");
@@ -3552,7 +3551,7 @@ static shapeio_result save_obj_shape(const string& filename, const vector<int>& 
     write_obj_command(fs, obj_command::face, {}, elems);
   }
 
-  return shapeio_ok();
+  return {shapeio_status::ok};
 }
 
 }  // namespace yocto
@@ -3580,7 +3579,7 @@ static shapeio_result load_cyhair(const string& filename, cyhair_data& hair) {
   // open file
   hair     = {};
   auto fs_ = open_file(filename, "b");
-  if(!fs_) return shapeio_error("cannot load " + filename + ": file not found");
+  if(!fs_) return {shapeio_status::file_not_found};
   auto fs  = fs_.fs;
 
   // Bytes 0-3    Must be "HAIR" in ascii code (48 41 49 52)
@@ -3691,7 +3690,7 @@ static shapeio_result load_cyhair(const string& filename, cyhair_data& hair) {
     }
   }
 
-  return shapeio_ok();
+  return {shapeio_status::ok};
 }
 
 static shapeio_result load_cyhair_shape(const string& filename, vector<vec2i>& lines,
@@ -3738,7 +3737,7 @@ static shapeio_result load_cyhair_shape(const string& filename, vector<vec2i>& l
   // fix colors
   for (auto& c : color) c = {pow(xyz(c), 2.2f), c.w};
 
-  return shapeio_ok();
+  return {shapeio_status::ok};
 }
 
 }  // namespace yocto
