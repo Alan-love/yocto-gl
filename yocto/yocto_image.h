@@ -298,19 +298,16 @@ void difference(image<vec4f>& diff, const image<vec4f>& a,
 // -----------------------------------------------------------------------------
 namespace yocto {
 
-// Result of image io operations.
-enum struct imageio_status {
-  ok,
-  file_not_found,
-  io_error,
-  unsupported_format,
-  bad_preset
-};
+// Result of file io operations.
 struct [[nodiscard]] imageio_result {
-  imageio_status status = imageio_status::ok;
-
-  operator bool() const { return status == imageio_status::ok; }
+  string error = "";
+         operator bool() const { return error.empty(); }
 };
+static inline imageio_result imageio_ok() { return {}; }
+static inline imageio_result imageio_error(
+    const string& filename, bool save, const string& msg) {
+  return {(save ? "error saving " : "error loading ") + filename + ": " + msg};
+}
 
 // Check if an image is HDR based on filename.
 bool is_hdr_filename(const string& filename);

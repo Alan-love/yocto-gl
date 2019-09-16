@@ -298,9 +298,9 @@ imageio_result load_texture(yocto_texture& texture, const string& dirname) {
       auto [type, nfilename] = get_preset_type(texture.uri);
       make_image_preset(texture.hdr, texture.ldr, type);
       texture.uri = nfilename;
-      return {imageio_status::ok};
+      return imageio_ok();
     } catch (...) {
-      return {imageio_status::bad_preset};
+      return imageio_error((fs::path(dirname) / texture.uri).string(), false, "bad preset");
     }
   } else {
     if (is_hdr_filename(texture.uri)) {
@@ -318,18 +318,18 @@ imageio_result load_voltexture(
       auto [type, nfilename] = get_preset_type(texture.uri);
       make_volpreset(texture.vol, type);
       texture.uri = nfilename;
-      return {imageio_status::ok};
+      return imageio_ok();
     } catch (...) {
-      return {imageio_status::bad_preset};
+      return imageio_error(fs::path(dirname) / texture.uri).string(), false, "bad preset");
     }
   } else {
     return load_volume(fs::path(dirname) / texture.uri, texture.vol);
   }
 }
 
-sceneio_result load_textures(
+imageio_result load_textures(
     yocto_scene& scene, const string& dirname, const load_params& params) {
-  if (params.notextures) return {sceneio_status::ok};
+  if (params.notextures) return imageio_ok();
 
   // load images
   if (params.noparallel) {
@@ -337,45 +337,48 @@ sceneio_result load_textures(
       if (params.cancel && *params.cancel) break;
       auto& texture = scene.textures[idx];
       if (!texture.hdr.empty() || !texture.ldr.empty()) continue;
-      auto err = load_texture(texture, dirname);
-      if (!err) return {sceneio_status::bad_texture, 0, err, {}, idx};
+      if(auto err = load_texture(texture, dirname); !err) return err;
     }
     for (auto idx = 0; idx < scene.voltextures.size(); idx++) {
       if (params.cancel && *params.cancel) break;
       auto& texture = scene.voltextures[idx];
       if (!texture.vol.empty()) continue;
-      auto err = load_voltexture(texture, dirname);
-      if (!err) return {sceneio_status::bad_voltexture, 0, err, {}, idx};
+      if(auto err = load_voltexture(texture, dirname); !err) return err;
     }
-    return {sceneio_status::ok};
+    return imageio_ok();
   } else {
-    std::atomic<sceneio_result> result = sceneio_result{sceneio_status::ok};
+    auto result = imageio_ok();
+    auto mutex = std::mutex();
     parallel_for((int)scene.textures.size(),
-        [&dirname, &scene, &result](int idx) {
-          if (sceneio_result err = result; !err) return;
+        [&dirname, &scene, &result, &mutex](int idx) {
+          {
+            std::lock_guard guard{mutex};
+            if(!result) return;
+          }
           auto& texture = scene.textures[idx];
           if (!texture.hdr.empty() || !texture.ldr.empty()) return;
-          auto err = load_texture(texture, dirname);
-          if (!err)
-            result = sceneio_result{
-                sceneio_status::bad_texture, 0, err, {}, idx};
+          if(auto err = load_texture(texture, dirname); !err) {
+            std::lock_guard guard{mutex};
+            result = err;
+          }
         },
         params.cancel);
     parallel_for((int)scene.voltextures.size(),
-        [&dirname, &scene, &result](int idx) {
-          if (sceneio_result err = result; !err) return;
+        [&dirname, &scene, &result, &mutex](int idx) {
+          {
+            std::lock_guard guard{mutex};
+            if(!result) return;
+          }
           auto& texture = scene.voltextures[idx];
           if (!texture.vol.empty()) return;
-          auto err = load_voltexture(texture, dirname);
-          if (!err)
-            result = sceneio_result{
-                sceneio_status::bad_voltexture, 0, err, {}, idx};
+          if(auto err = load_voltexture(texture, dirname); !err) {
+            std::lock_guard guard{mutex};
+            result = err;
+          }
         },
         params.cancel);
     return result;
   }
-
-  return {sceneio_status::ok};
 }
 
 imageio_result save_texture(
@@ -393,53 +396,56 @@ imageio_result save_voltexture(
 }
 
 // helper to save textures
-sceneio_result save_textures(const yocto_scene& scene, const string& dirname,
+imageio_result save_textures(const yocto_scene& scene, const string& dirname,
     const save_params& params) {
-  if (params.notextures) return {sceneio_status::ok};
+  if (params.notextures) return imageio_ok();
 
   // save images
   if (params.noparallel) {
     for (auto idx = 0; idx < scene.textures.size(); idx++) {
       if (params.cancel && *params.cancel) break;
       auto& texture = scene.textures[idx];
-      auto  err     = save_texture(texture, dirname);
-      if (!err) return {sceneio_status::bad_texture, 0, err, {}, idx};
+      if(auto  err     = save_texture(texture, dirname); !err) return err;
     }
     for (auto idx = 0; idx < scene.voltextures.size(); idx++) {
       if (params.cancel && *params.cancel) break;
       auto& texture = scene.voltextures[idx];
-      auto  err     = save_voltexture(texture, dirname);
-      if (!err) return {sceneio_status::bad_voltexture, 0, err, {}, idx};
+      if(auto  err     = save_voltexture(texture, dirname); !err) return err;
     }
-    return {sceneio_status::ok};
+    return imageio_ok();
   } else {
-    std::atomic<sceneio_result> result = sceneio_result{sceneio_status::ok};
+    auto result = imageio_ok();
+    auto mutex = std::mutex();
     parallel_for(
         scene.textures.size(),
-        [&dirname, &scene, &result](int idx) {
-          if (sceneio_result err = result; !err) return;
+        [&dirname, &scene, &result, &mutex](int idx) {
+          {
+            std::lock_guard guard{mutex};
+            if(!result) return;
+          }
           auto& texture = scene.textures[idx];
-          auto  err     = save_texture(texture, dirname);
-          if (!err)
-            result = sceneio_result{
-                sceneio_status::bad_texture, 0, err, {}, idx};
+          if(auto  err     = save_texture(texture, dirname); !err) {
+            std::lock_guard guard{mutex};
+            result = err;
+          }
         },
         params.cancel);
     parallel_for(
         scene.voltextures.size(),
-        [&dirname, &scene, &result](int idx) {
-          if (sceneio_result err = result; !err) return;
+        [&dirname, &scene, &result, &mutex](int idx) {
+          {
+            std::lock_guard guard{mutex};
+            if(!result) return;
+          }
           auto& texture = scene.voltextures[idx];
-          auto  err     = save_voltexture(texture, dirname);
-          if (!err)
-            result = sceneio_result{
-                sceneio_status::bad_voltexture, 0, err, {}, idx};
+          if(auto  err     = save_voltexture(texture, dirname); !err) {
+            std::lock_guard guard{mutex};
+            result = err;
+          }
         },
         params.cancel);
     return result;
   }
-
-  return {sceneio_status::ok};
 }
 
 shapeio_result load_shape(yocto_shape& shape, const string& dirname) {
