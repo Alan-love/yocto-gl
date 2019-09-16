@@ -320,7 +320,7 @@ imageio_result load_voltexture(
       texture.uri = nfilename;
       return imageio_ok();
     } catch (...) {
-      return imageio_error(fs::path(dirname) / texture.uri).string(), false, "bad preset");
+      return imageio_error((fs::path(dirname) / texture.uri).string(), false, "bad preset");
     }
   } else {
     return load_volume(fs::path(dirname) / texture.uri, texture.vol);
@@ -456,9 +456,9 @@ shapeio_result load_shape(yocto_shape& shape, const string& dirname) {
           shape.quadspos, shape.quadsnorm, shape.quadstexcoord, shape.positions,
           shape.normals, shape.texcoords, shape.colors, shape.radius, type);
       shape.uri = nfilename;
-      return {shapeio_status::ok};
+      return shapeio_ok();
     } catch (...) {
-      return {shapeio_status::bad_preset};
+      return shapeio_error(shape.uri, false, "bad preset");
     }
   } else {
     return load_shape(fs::path(dirname) / shape.uri, shape.points, shape.lines,
@@ -484,9 +484,9 @@ shapeio_result load_subdiv(yocto_subdiv& subdiv, const string& dirname) {
           subdiv.positions, subdiv.normals, subdiv.texcoords, subdiv.colors,
           subdiv.radius, type);
       subdiv.uri = nfilename;
-      return {shapeio_status::ok};
+      return shapeio_ok();
     } catch (...) {
-      return {shapeio_status::bad_preset};
+      return shapeio_error(subdiv.uri, false, "bad preset");
     }
   } else {
     return load_shape(fs::path(dirname) / subdiv.uri, subdiv.points,
@@ -505,44 +505,50 @@ shapeio_result save_subdiv(const yocto_subdiv& subdiv, const string& dirname) {
 }
 
 // Load json meshes
-sceneio_result load_shapes(
+shapeio_result load_shapes(
     yocto_scene& scene, const string& dirname, const load_params& params) {
   // load shapes
   if (params.noparallel) {
     for (auto idx = 0; idx < scene.shapes.size(); idx++) {
       if (params.cancel && *params.cancel) break;
       auto& shape = scene.shapes[idx];
-      auto  err   = load_shape(shape, dirname);
-      if (!err) return {sceneio_status::bad_shape, 0, {}, err, idx};
+      if(auto  err   = load_shape(shape, dirname); !err) return err;
     }
     for (auto idx = 0; idx < scene.subdivs.size(); idx++) {
       if (params.cancel && *params.cancel) break;
       auto& subdiv = scene.subdivs[idx];
-      auto  err    = load_subdiv(subdiv, dirname);
-      if (!err) return {sceneio_status::bad_subdiv, 0, {}, err, idx};
+      if(auto  err    = load_subdiv(subdiv, dirname); !err) return err;
     }
-    return {sceneio_status::ok};
+    return shapeio_ok();
   } else {
-    std::atomic<sceneio_result> result = sceneio_result{sceneio_status::ok};
+    auto result = shapeio_ok();
+    auto mutex = std::mutex();
     parallel_for(
         scene.shapes.size(),
-        [&dirname, &scene, &result](int idx) {
-          if (sceneio_result err = result; !err) return;
+        [&dirname, &scene, &result, &mutex](int idx) {
+          {
+            std::lock_guard guard{mutex};
+            if(!result) return;
+          }
           auto& shape = scene.shapes[idx];
-          auto  err   = load_shape(shape, dirname);
-          if (!err)
-            result = sceneio_result{sceneio_status::bad_shape, 0, {}, err, idx};
+          if(auto  err   = load_shape(shape, dirname); !err) {
+            std::lock_guard guard{mutex};
+            result = err;
+          }
         },
         params.cancel);
     parallel_for(
         scene.subdivs.size(),
-        [&dirname, &scene, &result](int idx) {
-          if (sceneio_result err = result; !err) return;
+        [&dirname, &scene, &result, &mutex](int idx) {
+          {
+            std::lock_guard guard{mutex};
+            if(!result) return;
+          }
           auto& subdiv = scene.subdivs[idx];
-          auto  err    = load_subdiv(subdiv, dirname);
-          if (!err)
-            result = sceneio_result{
-                sceneio_status::bad_subdiv, 0, {}, err, idx};
+          if(auto  err    = load_subdiv(subdiv, dirname); !err) {
+            std::lock_guard guard{mutex};
+            result = err;
+          }
         },
         params.cancel);
     return result;
@@ -550,42 +556,50 @@ sceneio_result load_shapes(
 }
 
 // Save json meshes
-sceneio_result save_shapes(const yocto_scene& scene, const string& dirname,
+shapeio_result save_shapes(const yocto_scene& scene, const string& dirname,
     const save_params& params) {
   // save shapes
   if (params.noparallel) {
     for (auto idx = 0; idx < scene.shapes.size(); idx++) {
       if (params.cancel && *params.cancel) break;
       auto& shape = scene.shapes[idx];
-      if (!save_shape(shape, dirname)) return {sceneio_status::bad_shape};
+      if (auto err = save_shape(shape, dirname); !err) return err;
     }
     for (auto idx = 0; idx < scene.subdivs.size(); idx++) {
       if (params.cancel && *params.cancel) break;
       auto& subdiv = scene.subdivs[idx];
-      if (!save_subdiv(subdiv, dirname)) return {sceneio_status::bad_shape};
+      if (auto err = save_subdiv(subdiv, dirname); !err) return err;
     }
-    return {sceneio_status::ok};
+    return shapeio_ok();
   } else {
-    std::atomic<sceneio_result> result = sceneio_result{sceneio_status::ok};
+    auto result = shapeio_ok();
+    auto mutex = std::mutex();
     parallel_for(
         scene.shapes.size(),
-        [&dirname, &scene, &result](int idx) {
-          if (sceneio_result err = result; !err) return;
+        [&dirname, &scene, &result, &mutex](int idx) {
+          {
+            std::lock_guard guard{mutex};
+            if(!result) return;
+          }
           auto& shape = scene.shapes[idx];
-          auto  err   = save_shape(shape, dirname);
-          if (!err)
-            result = sceneio_result{sceneio_status::bad_shape, 0, {}, err, idx};
+          if(auto  err   = save_shape(shape, dirname); !err) {
+            std::lock_guard guard{mutex};
+            result = err;
+          }
         },
         params.cancel);
     parallel_for(
         scene.subdivs.size(),
-        [&dirname, &scene, &result](int idx) {
-          if (sceneio_result err = result; !err) return;
+        [&dirname, &scene, &result, &mutex](int idx) {
+          {
+            std::lock_guard guard{mutex};
+            if(!result) return;
+          }
           auto& subdiv = scene.subdivs[idx];
-          auto  err    = save_subdiv(subdiv, dirname);
-          if (!err)
-            result = sceneio_result{
-                sceneio_status::bad_subdiv, 0, {}, err, idx};
+          if(auto  err    = save_subdiv(subdiv, dirname); !err) {
+            std::lock_guard guard{mutex};
+            result = err;
+          }
         },
         params.cancel);
     return result;

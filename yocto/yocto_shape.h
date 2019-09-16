@@ -581,21 +581,16 @@ void distance_to_color(vector<vec4f>& colors, const vector<float>& distances,
 // -----------------------------------------------------------------------------
 namespace yocto {
 
-// Result of shape io operations.
-enum struct shapeio_status {
-  ok,
-  file_not_found,
-  io_error,
-  bad_data,
-  unsupported_format,
-  bad_preset
-};
+// Result of file io operations.
 struct [[nodiscard]] shapeio_result {
-  shapeio_status status = shapeio_status::ok;
-  int            line   = 0;
-
-  operator bool() const { return status == shapeio_status::ok; }
+  string error = "";
+         operator bool() const { return error.empty(); }
 };
+static inline shapeio_result shapeio_ok() { return {}; }
+static inline shapeio_result shapeio_error(
+    const string& filename, bool save, const string& msg) {
+  return {(save ? "error saving " : "error loading ") + filename + ": " + msg};
+}
 
 // Load/Save a shape
 shapeio_result load_shape(const string& filename, vector<int>& points,
