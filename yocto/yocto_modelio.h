@@ -222,16 +222,24 @@ struct obj_texture_info {
 // Obj command
 enum struct obj_command {
   // clang-format off
-  vertex, normal, texcoord,         // data in value
-  face, line, point,                // data in vertices
-  object, group, usemtl, smoothing, // data in name
-  mtllib, objxlib,                  // data in name
+  // reading errors
+  error,           
+  // vertex data                 
+  vertex, normal, texcoord,
+  // element data
+  face, line, point,
+  // object data
+  object, group, usemtl, smoothing,
+  // material and extension libraries
+  mtllib, objxlib,
   // clang-format on
 };
 
 // Mtl command
 enum struct mtl_command {
   // clang-format off
+  // reading errors
+  error,
   // material name and type (value)
   material, illum,
   // material colors
@@ -259,6 +267,8 @@ enum struct mtl_command {
 // Objx command
 enum struct objx_command {
   // clang-format off
+  // reading errors
+  error,
   // object names
   camera, environment, instance, procedural,
   // object frames
@@ -284,7 +294,7 @@ struct obj_value {
   array<double, 16> array_  = {};
 };
 
-// Read obj elements
+// Read obj elements. Sets the command to `error` on error.
 bool read_obj_command(file_wrapper& fs, obj_command& command, obj_value& value,
     vector<obj_vertex>& vertices, obj_vertex& vert_size);
 bool read_mtl_command(file_wrapper& fs, mtl_command& command, obj_value& value,
@@ -292,13 +302,13 @@ bool read_mtl_command(file_wrapper& fs, mtl_command& command, obj_value& value,
 bool read_objx_command(file_wrapper& fs, objx_command& command,
     obj_value& value, obj_texture_info& texture);
 
-// Write obj elements
-void write_obj_comment(file_wrapper& fs, const string& comment);
-void write_obj_command(file_wrapper& fs, obj_command command,
+// Write obj elements. Returns false on error.
+bool write_obj_comment(file_wrapper& fs, const string& comment);
+bool write_obj_command(file_wrapper& fs, obj_command command,
     const obj_value& value, const vector<obj_vertex>& vertices = {});
-void write_mtl_command(file_wrapper& fs, mtl_command command,
+bool write_mtl_command(file_wrapper& fs, mtl_command command,
     const obj_value& value, const obj_texture_info& texture = {});
-void write_objx_command(file_wrapper& fs, objx_command command,
+bool write_objx_command(file_wrapper& fs, objx_command command,
     const obj_value& value, const obj_texture_info& texture = {});
 
 // typesafe access of obj value

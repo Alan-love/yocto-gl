@@ -1210,228 +1210,180 @@ bool read_objx_command(file_wrapper& fs, objx_command& command,
 }
 
 // Write obj elements
-void write_obj_comment(file_wrapper& fs, const string& comment) {
+bool write_obj_comment(file_wrapper& fs, const string& comment) {
   auto lines = split_string(comment, "\n");
   for (auto& line : lines) {
-    checked_fprintf(fs, "# %s\n", line.c_str());
+    if(fprintf(fs.fs, "# %s\n", line.c_str()) < 0) return false;
   }
-  checked_fprintf(fs, "\n");
+  if(fprintf(fs.fs, "\n") < 0) return false;
+  return true;
 }
 
-void write_obj_command(file_wrapper& fs, obj_command command,
+bool write_obj_command(file_wrapper& fs, obj_command command,
     const obj_value& value_, const vector<obj_vertex>& vertices) {
   auto& name  = value_.string_;
   auto& value = value_.array_;
   switch (command) {
+    case obj_command::error: return true;
     case obj_command::vertex:
-      checked_fprintf(fs, "v %g %g %g\n", value[0], value[1], value[2]);
-      break;
+      return fprintf(fs.fs, "v %g %g %g\n", value[0], value[1], value[2]) >= 0;
     case obj_command::normal:
-      checked_fprintf(fs, "vn %g  %g %g\n", value[0], value[1], value[2]);
-      break;
+      return fprintf(fs.fs, "vn %g  %g %g\n", value[0], value[1], value[2]) >= 0;
     case obj_command::texcoord:
-      checked_fprintf(fs, "vt %g %g\n", value[0], value[1]);
-      break;
+      return fprintf(fs.fs, "vt %g %g\n", value[0], value[1]) >= 0;
     case obj_command::face:
     case obj_command::line:
     case obj_command::point:
-      if (command == obj_command::face) checked_fprintf(fs, "f ");
-      if (command == obj_command::line) checked_fprintf(fs, "l ");
-      if (command == obj_command::point) checked_fprintf(fs, "p ");
+      if (command == obj_command::face) if(fprintf(fs.fs, "f ") < 0) return false;
+      if (command == obj_command::line) if(fprintf(fs.fs, "l ") < 0) return false;
+      if (command == obj_command::point) if(fprintf(fs.fs, "p ") < 0) return false;
       for (auto& vert : vertices) {
-        checked_fprintf(fs, " ");
-        checked_fprintf(fs, "%d", vert.position);
+        if(fprintf(fs.fs, " ") < 0) return false;
+        if(fprintf(fs.fs, "%d", vert.position) < 0) return false;
         if (vert.texcoord) {
-          checked_fprintf(fs, "/%d", vert.texcoord);
+          if(fprintf(fs.fs, "/%d", vert.texcoord) < 0) return false;
           if (vert.normal) {
-            checked_fprintf(fs, "/%d", vert.normal);
+            if(fprintf(fs.fs, "/%d", vert.normal) < 0) return false;
           }
         } else if (vert.normal) {
-          checked_fprintf(fs, "//%d", vert.normal);
+          if(fprintf(fs.fs, "//%d", vert.normal) < 0) return false;
         }
       }
-      checked_fprintf(fs, "\n");
-      break;
+      if(fprintf(fs.fs, "\n") < 0) return false;
+      return true;
     case obj_command::object:
-      checked_fprintf(fs, "o %s\n", name.c_str());
-      break;
-    case obj_command::group: checked_fprintf(fs, "g %s\n", name.c_str()); break;
+      return fprintf(fs.fs, "o %s\n", name.c_str()) >= 0;
+    case obj_command::group: return fprintf(fs.fs, "g %s\n", name.c_str()) >= 0;
     case obj_command::usemtl:
-      checked_fprintf(fs, "usemtl %s\n", name.c_str());
-      break;
+      return fprintf(fs.fs, "usemtl %s\n", name.c_str()) >= 0;
     case obj_command::smoothing:
-      checked_fprintf(fs, "s %s\n", name.c_str());
-      break;
+      return fprintf(fs.fs, "s %s\n", name.c_str()) >= 0;
     case obj_command::mtllib:
-      checked_fprintf(fs, "mtllib %s\n", name.c_str());
-      break;
-    case obj_command::objxlib: break;
+      return fprintf(fs.fs, "mtllib %s\n", name.c_str()) >= 0;
+    case obj_command::objxlib: return true;
   }
 }
 
-void write_mtl_command(file_wrapper& fs, mtl_command command,
+bool write_mtl_command(file_wrapper& fs, mtl_command command,
     const obj_value& value_, const obj_texture_info& texture) {
   auto& name  = value_.string_;
   auto  value = value_.number;
   auto& color = value_.array_;
   switch (command) {
+    case mtl_command::error: return true;
     case mtl_command::material:
-      checked_fprintf(fs, "\nnewmtl %s\n", name.c_str());
-      break;
+      return fprintf(fs.fs,"\nnewmtl %s\n", name.c_str()) >= 0;
     case mtl_command::illum:
-      checked_fprintf(fs, "  illum %d\n", (int)value);
-      break;
+      return fprintf(fs.fs,"  illum %d\n", (int)value) >= 0;
     case mtl_command::emission:
-      checked_fprintf(fs, "  Ke %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Ke %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case mtl_command::ambient:
-      checked_fprintf(fs, "  Ka %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Ka %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case mtl_command::diffuse:
-      checked_fprintf(fs, "  Kd %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Kd %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case mtl_command::specular:
-      checked_fprintf(fs, "  Ks %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Ks %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case mtl_command::reflection:
-      checked_fprintf(fs, "  Kr %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Kr %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case mtl_command::transmission:
-      checked_fprintf(fs, "  Kt %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Kt %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case mtl_command::exponent:
-      checked_fprintf(fs, "  Ns %d\n", (int)value);
-      break;
-    case mtl_command::opacity: checked_fprintf(fs, "  d %g\n", value); break;
-    case mtl_command::ior: checked_fprintf(fs, "  Ni %g\n", value); break;
+      return fprintf(fs.fs,"  Ns %d\n", (int)value) >= 0;
+    case mtl_command::opacity: return fprintf(fs.fs,"  d %g\n", value) >= 0;
+    case mtl_command::ior: return fprintf(fs.fs,"  Ni %g\n", value) >= 0;
     case mtl_command::emission_map:
-      checked_fprintf(fs, "  map_Ke %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_Ke %s\n", texture.path.c_str()) >= 0;
     case mtl_command::ambient_map:
-      checked_fprintf(fs, "  map_Ka %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_Ka %s\n", texture.path.c_str()) >= 0;
     case mtl_command::diffuse_map:
-      checked_fprintf(fs, "  map_Kd %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_Kd %s\n", texture.path.c_str()) >= 0;
     case mtl_command::specular_map:
-      checked_fprintf(fs, "  map_Ks %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_Ks %s\n", texture.path.c_str()) >= 0;
     case mtl_command::reflection_map:
-      checked_fprintf(fs, "  map_Kr %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_Kr %s\n", texture.path.c_str()) >= 0;
     case mtl_command::transmission_map:
-      checked_fprintf(fs, "  map_Kt %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_Kt %s\n", texture.path.c_str()) >= 0;
     case mtl_command::opacity_map:
-      checked_fprintf(fs, "  map_d %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_d %s\n", texture.path.c_str()) >= 0;
     case mtl_command::exponent_map:
-      checked_fprintf(fs, "  map_Ni %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_Ni %s\n", texture.path.c_str()) >= 0;
     case mtl_command::bump_map:
-      checked_fprintf(fs, "  map_bump %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_bump %s\n", texture.path.c_str()) >= 0;
     case mtl_command::normal_map:
-      checked_fprintf(fs, "  map_norm %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_norm %s\n", texture.path.c_str()) >= 0;
     case mtl_command::displacement_map:
-      checked_fprintf(fs, "  map_disp %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_disp %s\n", texture.path.c_str()) >= 0;
     case mtl_command::pbr_roughness:
-      checked_fprintf(fs, "  Pr %g\n", value);
-      break;
+      return fprintf(fs.fs,"  Pr %g\n", value) >= 0;
     case mtl_command::pbr_metallic:
-      checked_fprintf(fs, "  Pm %g\n", value);
-      break;
-    case mtl_command::pbr_sheen: checked_fprintf(fs, "  Ps %g\n", value); break;
+      return fprintf(fs.fs,"  Pm %g\n", value) >= 0;
+    case mtl_command::pbr_sheen: return fprintf(fs.fs,"  Ps %g\n", value) >= 0;
     case mtl_command::pbr_clearcoat:
-      checked_fprintf(fs, "  Pc %g\n", value);
-      break;
+      return fprintf(fs.fs,"  Pc %g\n", value) >= 0;
     case mtl_command::pbr_coatroughness:
-      checked_fprintf(fs, "  Pcr %g\n", value);
-      break;
+      return fprintf(fs.fs,"  Pcr %g\n", value) >= 0;
     case mtl_command::pbr_roughness_map:
-      checked_fprintf(fs, "  Pr_map %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  Pr_map %s\n", texture.path.c_str()) >= 0;
     case mtl_command::pbr_metallic_map:
-      checked_fprintf(fs, "  Pm_map %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  Pm_map %s\n", texture.path.c_str()) >= 0;
     case mtl_command::pbr_sheen_map:
-      checked_fprintf(fs, "  Ps_map %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  Ps_map %s\n", texture.path.c_str()) >= 0;
     case mtl_command::pbr_clearcoat_map:
-      checked_fprintf(fs, "  Pc_map %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  Pc_map %s\n", texture.path.c_str()) >= 0;
     case mtl_command::pbr_coatroughness_map:
-      checked_fprintf(fs, "  Pcr_map %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  Pcr_map %s\n", texture.path.c_str()) >= 0;
     case mtl_command::vol_transmission:
-      checked_fprintf(fs, "  Vt %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Vt %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case mtl_command::vol_meanfreepath:
-      checked_fprintf(fs, "  Vp %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Vp %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case mtl_command::vol_emission:
-      checked_fprintf(fs, "  Ve %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Ve %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case mtl_command::vol_scattering:
-      checked_fprintf(fs, "  Vs %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Vs %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case mtl_command::vol_anisotropy:
-      checked_fprintf(fs, "  Vg %g\n", value);
-      break;
-    case mtl_command::vol_scale: checked_fprintf(fs, "  Vr %g\n", value); break;
+      return fprintf(fs.fs,"  Vg %g\n", value) >= 0;
+    case mtl_command::vol_scale: return fprintf(fs.fs,"  Vr %g\n", value) >= 0;
     case mtl_command::vol_scattering_map:
-      checked_fprintf(fs, "  Vs_map %s\n", texture.path.c_str());
+      return fprintf(fs.fs,"  Vs_map %s\n", texture.path.c_str()) >= 0;
   }
 }
 
-void write_objx_command(file_wrapper& fs, objx_command command,
+bool write_objx_command(file_wrapper& fs, objx_command command,
     const obj_value& value_, const obj_texture_info& texture) {
   auto& name  = value_.string_;
   auto  value = value_.number;
   auto& color = value_.array_;
   auto& frame = value_.array_;
   switch (command) {
+    case objx_command::error: return true;
     case objx_command::camera:
-      checked_fprintf(fs, "\nnewcam %s\n", name.c_str());
-      break;
+      return fprintf(fs.fs,"\nnewcam %s\n", name.c_str()) >= 0;
     case objx_command::environment:
-      checked_fprintf(fs, "\nnewenv %s\n", name.c_str());
-      break;
+      return fprintf(fs.fs,"\nnewenv %s\n", name.c_str()) >= 0;
     case objx_command::instance:
-      checked_fprintf(fs, "\nnewist %s\n", name.c_str());
-      break;
+      return fprintf(fs.fs,"\nnewist %s\n", name.c_str()) >= 0;
     case objx_command::procedural:
-      checked_fprintf(fs, "\nnewproc %s\n", name.c_str());
-      break;
+      return fprintf(fs.fs,"\nnewproc %s\n", name.c_str()) >= 0;
     case objx_command::frame:
-      checked_fprintf(fs, "  frame %g %g %g %g %g %g %g %g %g %g %g %g\n",
+      return fprintf(fs.fs,"  frame %g %g %g %g %g %g %g %g %g %g %g %g\n",
           frame[0], frame[1], frame[2], frame[3], frame[4], frame[5], frame[6],
-          frame[7], frame[8], frame[9], frame[10], frame[11]);
-      break;
+          frame[7], frame[8], frame[9], frame[10], frame[11]) >= 0;
     case objx_command::object:
-      checked_fprintf(fs, "  obj %s\n", name.c_str());
-      break;
+      return fprintf(fs.fs,"  obj %s\n", name.c_str()) >= 0;
     case objx_command::material:
-      checked_fprintf(fs, "  mat %s\n", name.c_str());
-      break;
-    case objx_command::ortho: checked_fprintf(fs, "  ortho %g\n", value); break;
-    case objx_command::width: checked_fprintf(fs, "  width %g\n", value); break;
+      return fprintf(fs.fs,"  mat %s\n", name.c_str()) >= 0;
+    case objx_command::ortho: return fprintf(fs.fs,"  ortho %g\n", value) >= 0;
+    case objx_command::width: return fprintf(fs.fs,"  width %g\n", value) >= 0;
     case objx_command::height:
-      checked_fprintf(fs, "  height %g\n", value);
-      break;
-    case objx_command::lens: checked_fprintf(fs, "  lens %g\n", value); break;
+      return fprintf(fs.fs,"  height %g\n", value) >= 0;
+    case objx_command::lens: return fprintf(fs.fs,"  lens %g\n", value) >= 0;
     case objx_command::aperture:
-      checked_fprintf(fs, "  aperture %g\n", value);
-      break;
-    case objx_command::focus: checked_fprintf(fs, "  focus %g\n", value); break;
+      return fprintf(fs.fs,"  aperture %g\n", value) >= 0;
+    case objx_command::focus: return fprintf(fs.fs,"  focus %g\n", value) >= 0;
     case objx_command::emission:
-      checked_fprintf(fs, "  Ke %g %g %g\n", color[0], color[1], color[2]);
-      break;
+      return fprintf(fs.fs,"  Ke %g %g %g\n", color[0], color[1], color[2]) >= 0;
     case objx_command::emission_map:
-      checked_fprintf(fs, "  map_Ke %s\n", texture.path.c_str());
-      break;
+      return fprintf(fs.fs,"  map_Ke %s\n", texture.path.c_str()) >= 0;
   }
 }
 
