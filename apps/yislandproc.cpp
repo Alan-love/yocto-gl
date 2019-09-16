@@ -344,10 +344,10 @@ void load_island_shape(vector<yocto_shape>& shapes,
     if(oerror) throw std::runtime_error("bad obj");
     switch (command) {
       case obj_command::vertex:
-        get_obj_value(value, opos.emplace_back());
+        opos.push_back(value.vec3);
         break;
       case obj_command::normal:
-        get_obj_value(value, onorm.emplace_back());
+        onorm.push_back(value.vec3);
         break;
       case obj_command::texcoord:
         throw std::runtime_error("texture coord not supported");
@@ -399,11 +399,11 @@ void load_island_shape(vector<yocto_shape>& shapes,
         }
       } break;
       case obj_command::group: {
-        get_obj_value(value, gname);
+        gname = value.str;
         split_next = true;
       } break;
       case obj_command::usemtl: {
-        get_obj_value(value, mname);
+        mname = value.str;
         split_next = true;
       } break;
       default: break;

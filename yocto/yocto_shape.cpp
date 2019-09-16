@@ -3377,11 +3377,11 @@ static bool load_obj_shape(const string& filename, vector<int>& points,
   auto oerror = false;
   while (read_obj_command(fs, element, value, vertices, vert_size, oerror)) {
     if (element == obj_command::vertex) {
-      if(!get_obj_value(value, opos.emplace_back())) return set_type_error();
+      opos.push_back(value.vec3);
     } else if (element == obj_command::normal) {
-      if(!get_obj_value(value, onorm.emplace_back())) return set_type_error();
+      onorm.emplace_back(value.vec3);
     } else if (element == obj_command::texcoord) {
-      if(!get_obj_value(value, otexcoord.emplace_back())) return set_type_error();
+      otexcoord.push_back(value.vec2);
     } else if (element == obj_command::face && facevarying) {
       for (auto& vert : vertices) {
         if (!vert.position) continue;
@@ -3531,12 +3531,12 @@ static bool save_obj_shape(const string& filename, const vector<int>& points,
       fs, "Written by Yocto/GL\nhttps://github.com/xelatihy/yocto-gl\n");
 
   for (auto& p : positions)
-    write_obj_command(fs, obj_command::vertex, make_obj_value(p));
+    write_obj_command(fs, obj_command::vertex, p);
   for (auto& n : normals)
-    write_obj_command(fs, obj_command::normal, make_obj_value(n));
+    write_obj_command(fs, obj_command::normal, n);
   for (auto& t : texcoords)
     write_obj_command(fs, obj_command::texcoord,
-        make_obj_value(vec2f{t.x, flip_texcoord ? 1 - t.y : t.y}));
+        vec2f{t.x, flip_texcoord ? 1 - t.y : t.y});
 
   auto elems = vector<obj_vertex>{};
   auto mask = obj_vertex{1, texcoords.empty() ? 0 : 1, normals.empty() ? 0 : 1};

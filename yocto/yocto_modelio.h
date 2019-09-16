@@ -277,15 +277,26 @@ enum struct objx_command {
 };
 
 // Obj value type
-enum struct obj_value_type { number, boolean, string, array };
+enum struct obj_value_type { num, bol, str, vec2, vec3, frame3 };
 
 // Obj value
 struct obj_value {
-  obj_value_type    type    = obj_value_type::number;
-  double            number  = 0;
-  bool              boolean = false;
-  string            string_ = "";
-  array<double, 16> array_  = {};
+  obj_value_type    type    = obj_value_type::num;
+  float             num  = 0;
+  bool              bol = false;
+  string            str = "";
+  vec2f             vec2 = zero2f;
+  vec3f             vec3 = zero3f;
+  frame3f           frame3 = identity3x4f;
+
+  obj_value() { }
+  obj_value(float num) : type{obj_value_type::num}, num{num} { }
+  obj_value(bool              bol) : type{obj_value_type::bol}, bol{bol} { }
+  obj_value(const char*            str) : type{obj_value_type::str}, str{str} { }
+  obj_value(string            str) : type{obj_value_type::str}, str{str} { }
+  obj_value(vec2f             vec2) : type{obj_value_type::vec2}, vec2{vec2} { }
+  obj_value(vec3f             vec3) : type{obj_value_type::vec3}, vec3{vec3} { }
+  obj_value(frame3f           frame3) : type{obj_value_type::frame3}, frame3{frame3} { }
 };
 
 // Read obj elements. Sets the command to `error` on error.
@@ -304,26 +315,6 @@ bool write_mtl_command(file_wrapper& fs, mtl_command command,
     const obj_value& value, const obj_texture_info& texture = {});
 bool write_objx_command(file_wrapper& fs, objx_command command,
     const obj_value& value, const obj_texture_info& texture = {});
-
-// typesafe access of obj value
-bool get_obj_value(const obj_value& yaml, string& value);
-bool get_obj_value(const obj_value& yaml, bool& value);
-bool get_obj_value(const obj_value& yaml, int& value);
-bool get_obj_value(const obj_value& yaml, float& value);
-bool get_obj_value(const obj_value& yaml, vec2f& value);
-bool get_obj_value(const obj_value& yaml, vec3f& value);
-bool get_obj_value(const obj_value& yaml, mat3f& value);
-bool get_obj_value(const obj_value& yaml, frame3f& value);
-
-// typesafe access of obj value
-obj_value make_obj_value(const string& value);
-obj_value make_obj_value(bool value);
-obj_value make_obj_value(int value);
-obj_value make_obj_value(float value);
-obj_value make_obj_value(const vec2f& value);
-obj_value make_obj_value(const vec3f& value);
-obj_value make_obj_value(const mat3f& value);
-obj_value make_obj_value(const frame3f& value);
 
 }  // namespace yocto
 

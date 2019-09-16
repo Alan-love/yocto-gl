@@ -1218,14 +1218,6 @@ namespace yocto {
 static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
     unordered_map<string, int>& mmap, unordered_map<string, int>& tmap,
     const load_params& params) {
-  // errors
-  auto set_parse_error = [&]() {
-    return set_sceneio_error(error, filename, false, "parse error");
-  };
-  auto set_type_error = [&]() {
-    return set_sceneio_error(error, filename, false, "type mismatch");
-  };
-
   // open file
   auto fs = open_file(filename);
   if (!fs) return set_sceneio_error(error, filename, false, "file not found");
@@ -1262,7 +1254,7 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
   while (read_mtl_command(fs, command, value, texture, oerror)) {
     if (command == mtl_command::material) {
       auto& material = scene.materials.emplace_back();
-      if(!get_obj_value(value, material.uri)) return set_type_error();
+      material.uri = value.str;
       mmap[material.uri] = (int)scene.materials.size() - 1;
       ptype              = parsing_type::material;
       continue;
@@ -1273,25 +1265,25 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
       auto& material = scene.materials.back();
       switch (command) {
         case mtl_command::emission:
-          if(!get_obj_value(value, material.emission)) return set_type_error();
+          material.emission = value.vec3;
           break;
         case mtl_command::diffuse:
-          if(!get_obj_value(value, material.diffuse)) return set_type_error();
+          material.diffuse = value.vec3;
           break;
         case mtl_command::specular:
-          if(!get_obj_value(value, material.specular)) return set_type_error();
+          material.specular = value.vec3;
           break;
         case mtl_command::transmission:
-          if(!get_obj_value(value, material.transmission)) return set_type_error();
+          material.transmission = value.vec3;
           break;
         case mtl_command::exponent:
-          if(!get_obj_value(value, material.roughness)) return set_type_error();
+          material.roughness = value.num;
           material.roughness = pow(2 / (material.roughness + 2), 1 / 4.0f);
           if (material.roughness < 0.01f) material.roughness = 0;
           if (material.roughness > 0.99f) material.roughness = 1;
           break;
         case mtl_command::opacity:
-          if(!get_obj_value(value, material.opacity)) return set_type_error();
+          material.opacity = value.num;
           break;
         case mtl_command::emission_map:
           material.emission_tex = add_texture(texture, false);
@@ -1312,10 +1304,10 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
           material.normal_tex = add_texture(texture, true);
           break;
         case mtl_command::pbr_roughness:
-          if(!get_obj_value(value, material.roughness)) return set_type_error();
+          material.roughness = value.num;
           break;
         case mtl_command::pbr_metallic:
-          if(!get_obj_value(value, material.metallic)) return set_type_error();
+          material.metallic = value.num;
           break;
         case mtl_command::pbr_roughness_map:
           material.roughness_tex = add_texture(texture, true);
@@ -1324,22 +1316,22 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
           material.metallic_tex = add_texture(texture, true);
           break;
         case mtl_command::vol_transmission:
-          if(!get_obj_value(value, material.voltransmission)) return set_type_error();
+          material.voltransmission = value.vec3;
           break;
         case mtl_command::vol_meanfreepath:
-          if(!get_obj_value(value, material.volmeanfreepath)) return set_type_error();
+          material.volmeanfreepath = value.vec3;
           break;
         case mtl_command::vol_scattering:
-          if(!get_obj_value(value, material.volscatter)) return set_type_error();
+          material.volscatter = value.vec3;
           break;
         case mtl_command::vol_emission:
-          if(!get_obj_value(value, material.volemission)) return set_type_error();
+          material.volemission = value.vec3;
           break;
         case mtl_command::vol_anisotropy:
-          if(!get_obj_value(value, material.volanisotropy)) return set_type_error();
+          material.volanisotropy = value.num;
           break;
         case mtl_command::vol_scale:
-          if(!get_obj_value(value, material.volscale)) return set_type_error();
+          material.volscale = value.num;
           break;
         case mtl_command::vol_scattering_map:
           material.subsurface_tex = add_texture(texture, false);
@@ -1349,7 +1341,7 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
     }
   }
 
-  if(oerror) return set_parse_error();
+  if(oerror)     return set_sceneio_error(error, filename, false, "parse error");
 
   return true;
 }
@@ -1359,14 +1351,6 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
     const unordered_map<string, int>& mmap, unordered_map<string, int>& tmap,
     const unordered_map<string, vector<int>>& object_shapes,
     const load_params&                        params) {
-  // errors
-  auto set_parse_error = [&]() {
-    return set_sceneio_error(error, filename, false, "parse error");
-  };
-  auto set_type_error = [&]() {
-    return set_sceneio_error(error, filename, false, "type mismatch");
-  };
-
   // open file
   auto fs = open_file(filename);
   if (!fs) return set_sceneio_error(error, filename, false, "file not found");
@@ -1407,13 +1391,13 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
   while (read_objx_command(fs, command, value, texture, oerror)) {
     if (command == objx_command::camera) {
       auto& camera = scene.cameras.emplace_back();
-      if(!get_obj_value(value, camera.uri)) return set_type_error();
+      camera.uri = value.str;
       ptype = parsing_type::camera;
       continue;
     }
     if (command == objx_command::environment) {
       auto& environment = scene.environments.emplace_back();
-      if(!get_obj_value(value, environment.uri)) return set_type_error();
+      environment.uri = value.str;
       ptype = parsing_type::environment;
       continue;
     }
@@ -1423,14 +1407,14 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
         first_instance = false;
       }
       auto& instance = scene.instances.emplace_back();
-      if(!get_obj_value(value, instance.uri)) return set_type_error();
+      instance.uri = value.str;
       ptype         = parsing_type::instance;
       instances_idx = {(int)scene.instances.size() - 1};
       continue;
     }
     if (command == objx_command::procedural) {
       auto& shape = scene.shapes.emplace_back();
-      if(!get_obj_value(value, shape.uri)) return set_type_error();
+      shape.uri = value.str;
       auto& instance = scene.instances.emplace_back();
       instance.uri   = shape.uri;
       instance.shape = (int)scene.shapes.size() - 1;
@@ -1443,27 +1427,27 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
     } else if (ptype == parsing_type::camera) {
       auto& camera = scene.cameras.back();
       switch (command) {
-        case objx_command::frame: if(!get_obj_value(value, camera.frame)) return set_type_error(); break;
+        case objx_command::frame: camera.frame = value.frame3;  break;
         case objx_command::ortho:
-          if(!get_obj_value(value, camera.orthographic)) return set_type_error();
+          camera.orthographic = value.bol;
           break;
-        case objx_command::width: if(!get_obj_value(value, camera.film.x)) return set_type_error(); break;
-        case objx_command::height: if(!get_obj_value(value, camera.film.y)) return set_type_error(); break;
-        case objx_command::lens: if(!get_obj_value(value, camera.lens)) return set_type_error(); break;
+        case objx_command::width: camera.film.x = value.num;  break;
+        case objx_command::height: camera.film.y = value.num;  break;
+        case objx_command::lens: camera.lens = value.num;  break;
         case objx_command::aperture:
-          if(!get_obj_value(value, camera.aperture)) return set_type_error();
+          camera.aperture = value.num; 
           break;
-        case objx_command::focus: if(!get_obj_value(value, camera.focus)) return set_type_error(); break;
+        case objx_command::focus: camera.focus = value.num;  break;
         default: throw std::runtime_error("bad objx"); break;
       }
     } else if (ptype == parsing_type::environment) {
       auto& environment = scene.environments.back();
       switch (command) {
         case objx_command::frame:
-          if(!get_obj_value(value, environment.frame)) return set_type_error();
+          environment.frame = value.frame3; 
           break;
         case objx_command::emission:
-          if(!get_obj_value(value, environment.emission)) return set_type_error();
+          environment.emission = value.vec3; 
           break;
         case objx_command::emission_map:
           environment.emission_tex = add_texture(texture, false);
@@ -1474,20 +1458,18 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
       switch (command) {
         case objx_command::frame: {
           for (auto& ist : instances_idx) {
-            get_obj_value(value, scene.instances[ist].frame);
+            scene.instances[ist].frame = value.frame3;
           }
         } break;
         case objx_command::material: {
-          auto name = ""s;
-          if(!get_obj_value(value, name)) return set_type_error();
+          auto name = value.str; 
           auto ist_material = mmap.at(name);
           for (auto& ist : instances_idx) {
             scene.instances[ist].material = ist_material;
           }
         } break;
         case objx_command::object: {
-          auto name = ""s;
-          if(!get_obj_value(value, name)) return set_type_error();
+          auto name = value.str; 
           auto& shapes = object_shapes.at(name);
           if (instances_idx.size() != shapes.size()) {
             auto to_add = shapes.size() - instances_idx.size();
@@ -1508,10 +1490,9 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
       auto& shape    = scene.shapes.back();
       auto& instance = scene.instances.back();
       switch (command) {
-        case objx_command::frame: if(!get_obj_value(value, instance.frame)) return set_type_error(); break;
+        case objx_command::frame: instance.frame = value.frame3;  break;
         case objx_command::material: {
-          auto name = ""s;
-          if(!get_obj_value(value, name)) return set_type_error();
+          auto name = value.str; 
           if (mmap.find(name) == mmap.end()) {
             throw std::runtime_error("missing material " + name);
           } else {
@@ -1519,8 +1500,7 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
           }
         } break;
         case objx_command::object: {
-          auto name = ""s;
-          if(!get_obj_value(value, name)) return set_type_error();
+          auto name = value.str; 
           if (name == "floor") {
             auto params         = proc_shape_params{};
             params.type         = proc_shape_params::type_t::floor;
@@ -1541,7 +1521,7 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
     }
   }
 
-  if(oerror) return set_parse_error();
+  if(oerror)     return set_sceneio_error(error, filename, false, "parse error");
 
   return true;
 }
@@ -1679,12 +1659,11 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
   auto oerror = false;
   while (read_obj_command(fs, command, value, vertices, vert_size, oerror)) {
     if (command == obj_command::vertex) {
-      if (!get_obj_value(value, opos.emplace_back())) return set_type_error();
+      opos.push_back(value.vec3);
     } else if (command == obj_command::normal) {
-      if (!get_obj_value(value, onorm.emplace_back())) return set_type_error();
+      onorm.push_back(value.vec3);
     } else if (command == obj_command::texcoord) {
-      if (!get_obj_value(value, otexcoord.emplace_back()))
-        return set_type_error();
+      otexcoord.push_back(value.vec2);
       otexcoord.back().y = 1 - otexcoord.back().y;
     } else if (command == obj_command::face) {
       if (scene.shapes.empty())
@@ -1777,19 +1756,18 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
       for (auto i = 0; i < vertices.size(); i++)
         shape.points.push_back(vertex_map.at(vertices[i]));
     } else if (command == obj_command::object) {
-      if (!get_obj_value(value, oname)) return set_type_error();
+      oname = value.str;
       gname = "";
       mname = "";
       if (!add_shape(error)) return false;
     } else if (command == obj_command::group) {
-      if (!get_obj_value(value, gname)) return set_type_error();
+      gname = value.str;
       if (!add_shape(error)) return false;
     } else if (command == obj_command::usemtl) {
-      if (!get_obj_value(value, mname)) return set_type_error();
+      mname = value.str;
       if (!add_shape(error)) return false;
     } else if (command == obj_command::mtllib) {
-      auto name = ""s;
-      if (!get_obj_value(value, name)) return set_type_error();
+      auto name = value.str;
       if (std::find(mlibs.begin(), mlibs.end(), name) != mlibs.end()) continue;
       mlibs.push_back(name);
       auto mtlpath = fs::path(filename).parent_path() / name;
@@ -1877,8 +1855,7 @@ static bool save_obj(const string& filename, const yocto_scene& scene,
   // material library
   if (!scene.materials.empty())
     write_obj_command(fs, obj_command::mtllib,
-        make_obj_value(
-            fs::path(filename).replace_extension(".mtl").filename().string()));
+            fs::path(filename).replace_extension(".mtl").filename().string());
 
   // shapes
   auto offset    = obj_vertex{0, 0, 0};
@@ -1892,32 +1869,32 @@ static bool save_obj(const string& filename, const yocto_scene& scene,
   for (auto& instance : preserve_instances ? instances : scene.instances) {
     auto& shape = scene.shapes[instance.shape];
     write_obj_command(fs, obj_command::object,
-        make_obj_value(fs::path(instance.uri).stem().string()));
+        fs::path(instance.uri).stem().string());
     if (instance.material >= 0)
       write_obj_command(fs, obj_command::usemtl,
-          make_obj_value(fs::path(scene.materials[instance.material].uri)
+          fs::path(scene.materials[instance.material].uri)
                              .stem()
-                             .string()));
+                             .string());
     if (instance.frame == identity3x4f) {
       for (auto& p : shape.positions)
-        write_obj_command(fs, obj_command::vertex, make_obj_value(p));
+        write_obj_command(fs, obj_command::vertex, p);
       for (auto& n : shape.normals)
-        write_obj_command(fs, obj_command::normal, make_obj_value(n));
+        write_obj_command(fs, obj_command::normal, n);
       for (auto& t : shape.texcoords)
         write_obj_command(fs, obj_command::texcoord,
-            make_obj_value(vec2f{t.x, flip_texcoord ? 1 - t.y : t.y}));
+            vec2f{t.x, flip_texcoord ? 1 - t.y : t.y});
     } else {
       for (auto& p : shape.positions) {
         write_obj_command(fs, obj_command::vertex,
-            make_obj_value(transform_point(instance.frame, p)));
+            transform_point(instance.frame, p));
       }
       for (auto& n : shape.normals) {
         write_obj_command(fs, obj_command::normal,
-            make_obj_value(transform_direction(instance.frame, n)));
+            transform_direction(instance.frame, n));
       }
       for (auto& t : shape.texcoords)
         write_obj_command(fs, obj_command::texcoord,
-            make_obj_value(vec2f{t.x, flip_texcoord ? 1 - t.y : t.y}));
+            vec2f{t.x, flip_texcoord ? 1 - t.y : t.y});
     }
     auto mask = obj_vertex{
         1, shape.texcoords.empty() ? 0 : 1, shape.normals.empty() ? 0 : 1};
@@ -2002,26 +1979,26 @@ static bool save_mtl(
   // materials
   for (auto& material : scene.materials) {
     write_mtl_command(fs, mtl_command::material,
-        make_obj_value(fs::path(material.uri).stem()));
-    write_mtl_command(fs, mtl_command::illum, make_obj_value(2));
+        fs::path(material.uri).stem().string());
+    write_mtl_command(fs, mtl_command::illum, 2.0f);
     if (material.emission != zero3f)
       write_mtl_command(
-          fs, mtl_command::emission, make_obj_value(material.emission));
+          fs, mtl_command::emission, material.emission);
     auto kd = material.diffuse * (1 - material.metallic);
     auto ks = material.specular * (1 - material.metallic) +
               material.metallic * material.diffuse;
-    write_mtl_command(fs, mtl_command::diffuse, make_obj_value(kd));
-    write_mtl_command(fs, mtl_command::specular, make_obj_value(ks));
+    write_mtl_command(fs, mtl_command::diffuse, kd);
+    write_mtl_command(fs, mtl_command::specular, ks);
     if (material.transmission != zero3f)
       write_mtl_command(
-          fs, mtl_command::transmission, make_obj_value(material.transmission));
+          fs, mtl_command::transmission, material.transmission);
     auto ns = (int)clamp(
         2 / pow(clamp(material.roughness, 0.0f, 0.99f) + 1e-10f, 4.0f) - 2,
         0.0f, 1.0e9f);
-    write_mtl_command(fs, mtl_command::exponent, make_obj_value(ns));
+    write_mtl_command(fs, mtl_command::exponent, (float)ns);
     if (material.opacity != 1)
       write_mtl_command(
-          fs, mtl_command::opacity, make_obj_value(material.opacity));
+          fs, mtl_command::opacity, material.opacity);
     if (material.emission_tex >= 0)
       write_mtl_command(fs, mtl_command::emission_map, {},
           scene.textures[material.emission_tex].uri);
@@ -2040,17 +2017,17 @@ static bool save_mtl(
     if (material.voltransmission != zero3f ||
         material.volmeanfreepath != zero3f) {
       write_mtl_command(fs, mtl_command::vol_transmission,
-          make_obj_value(material.voltransmission));
+          material.voltransmission);
       write_mtl_command(fs, mtl_command::vol_meanfreepath,
-          make_obj_value(material.volmeanfreepath));
+          material.volmeanfreepath);
       write_mtl_command(
-          fs, mtl_command::vol_emission, make_obj_value(material.volemission));
+          fs, mtl_command::vol_emission, material.volemission);
       write_mtl_command(
-          fs, mtl_command::vol_scattering, make_obj_value(material.volscatter));
+          fs, mtl_command::vol_scattering, material.volscatter);
       write_mtl_command(fs, mtl_command::vol_anisotropy,
-          make_obj_value(material.volanisotropy));
+          material.volanisotropy);
       write_mtl_command(
-          fs, mtl_command::vol_scale, make_obj_value(material.volscale));
+          fs, mtl_command::vol_scale, material.volscale);
     }
   }
 
@@ -2069,43 +2046,43 @@ static bool save_objx(const string& filename, const yocto_scene& scene,
 
   // cameras
   for (auto& camera : scene.cameras) {
-    write_objx_command(fs, objx_command::camera, make_obj_value(camera.uri));
+    write_objx_command(fs, objx_command::camera, camera.uri);
     if (camera.orthographic)
       write_objx_command(
-          fs, objx_command::ortho, make_obj_value((float)camera.orthographic));
-    write_objx_command(fs, objx_command::width, make_obj_value(camera.film.x));
-    write_objx_command(fs, objx_command::height, make_obj_value(camera.film.y));
-    write_objx_command(fs, objx_command::lens, make_obj_value(camera.lens));
-    write_objx_command(fs, objx_command::focus, make_obj_value(camera.focus));
+          fs, objx_command::ortho, (float)camera.orthographic);
+    write_objx_command(fs, objx_command::width, camera.film.x);
+    write_objx_command(fs, objx_command::height, camera.film.y);
+    write_objx_command(fs, objx_command::lens, camera.lens);
+    write_objx_command(fs, objx_command::focus, camera.focus);
     write_objx_command(
-        fs, objx_command::aperture, make_obj_value(camera.aperture));
-    write_objx_command(fs, objx_command::frame, make_obj_value(camera.frame));
+        fs, objx_command::aperture, camera.aperture);
+    write_objx_command(fs, objx_command::frame, camera.frame);
   }
 
   // environments
   for (auto& environment : scene.environments) {
     write_objx_command(
-        fs, objx_command::environment, make_obj_value(environment.uri));
+        fs, objx_command::environment, environment.uri);
     write_objx_command(
-        fs, objx_command::emission, make_obj_value(environment.emission));
+        fs, objx_command::emission, environment.emission);
     if (environment.emission_tex >= 0)
       write_objx_command(fs, objx_command::emission_map, {},
           scene.textures[environment.emission_tex].uri);
     write_objx_command(
-        fs, objx_command::frame, make_obj_value(environment.frame));
+        fs, objx_command::frame, environment.frame);
   }
 
   // instances
   if (preserve_instances) {
     for (auto& instance : scene.instances) {
       write_objx_command(
-          fs, objx_command::instance, make_obj_value(instance.uri));
+          fs, objx_command::instance, instance.uri);
       write_objx_command(fs, objx_command::object,
-          make_obj_value(scene.shapes[instance.shape].uri));
+          scene.shapes[instance.shape].uri);
       write_objx_command(fs, objx_command::material,
-          make_obj_value(scene.materials[instance.material].uri));
+          scene.materials[instance.material].uri);
       write_objx_command(
-          fs, objx_command::frame, make_obj_value(instance.frame));
+          fs, objx_command::frame, instance.frame);
     }
   }
 
@@ -3861,12 +3838,6 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
   // errors
   auto set_parse_error = [&]() {
     return set_sceneio_error(error, filename, false, "parse error");
-  };
-  auto set_property_error = [&]() {
-    return set_sceneio_error(error, filename, false, "unknown property");
-  };
-  auto set_type_error = [&]() {
-    return set_sceneio_error(error, filename, false, "type mismatch");
   };
 
   auto files = vector<file_wrapper>{};
