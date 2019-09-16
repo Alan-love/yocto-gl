@@ -339,7 +339,9 @@ void load_island_shape(vector<yocto_shape>& shapes,
   auto value     = obj_value{};
   auto verts     = vector<obj_vertex>{};
   auto vert_size = obj_vertex{};
-  while (read_obj_command(fs, command, value, verts, vert_size)) {
+  auto oerror = false;
+  while (read_obj_command(fs, command, value, verts, vert_size, oerror)) {
+    if(oerror) throw std::runtime_error("bad obj");
     switch (command) {
       case obj_command::vertex:
         get_obj_value(value, opos.emplace_back());
@@ -407,6 +409,7 @@ void load_island_shape(vector<yocto_shape>& shapes,
       default: break;
     }
   }
+    if(oerror) throw std::runtime_error("bad obj");
 }
 
 void add_island_shape(yocto_scene& scene, const string& parent_name,

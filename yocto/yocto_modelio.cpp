@@ -811,11 +811,11 @@ static inline bool parse_obj_value_or_empty(
 
 // Read obj
 bool read_obj_command(file_wrapper& fs, obj_command& command, obj_value& value,
-    vector<obj_vertex>& vertices, obj_vertex& vert_size) {
+    vector<obj_vertex>& vertices, obj_vertex& vert_size, bool& error) {
   // set error
-  auto set_error = [&command]() {
-    command = obj_command::error;
-    return true;
+  auto set_error = [&error]() {
+    error = true;
+    return false;
   };
   // read the file line by line
   char buffer[4096];
@@ -899,11 +899,11 @@ bool read_obj_command(file_wrapper& fs, obj_command& command, obj_value& value,
 
 // Read mtl
 bool read_mtl_command(file_wrapper& fs, mtl_command& command, obj_value& value,
-    obj_texture_info& texture, bool fliptr) {
+    obj_texture_info& texture, bool& error, bool fliptr) {
   // set error
-  auto set_error = [&command]() {
-    command = mtl_command::error;
-    return true;
+  auto set_error = [&error]() {
+    error = true;
+    return false;
   };
   // read the file line by line
   char buffer[4096];
@@ -1064,11 +1064,11 @@ bool read_mtl_command(file_wrapper& fs, mtl_command& command, obj_value& value,
 
 // Read objx
 bool read_objx_command(file_wrapper& fs, objx_command& command,
-    obj_value& value, obj_texture_info& texture) {
+    obj_value& value, obj_texture_info& texture, bool& error) {
   // set error
-  auto set_error = [&command]() {
-    command = objx_command::error;
-    return true;
+  auto set_error = [&error]() {
+    error = true;
+    return false;
   };
   // read the file line by line
   char buffer[4096];
@@ -1316,7 +1316,6 @@ bool write_obj_command(file_wrapper& fs, obj_command command,
   auto& name  = value_.string_;
   auto& value = value_.array_;
   switch (command) {
-    case obj_command::error: return true;
     case obj_command::vertex:
       return fprintf(fs.fs, "v %g %g %g\n", value[0], value[1], value[2]) >= 0;
     case obj_command::normal:
@@ -1366,7 +1365,6 @@ bool write_mtl_command(file_wrapper& fs, mtl_command command,
   auto  value = value_.number;
   auto& color = value_.array_;
   switch (command) {
-    case mtl_command::error: return true;
     case mtl_command::material:
       return fprintf(fs.fs, "\nnewmtl %s\n", name.c_str()) >= 0;
     case mtl_command::illum:
@@ -1461,7 +1459,6 @@ bool write_objx_command(file_wrapper& fs, objx_command command,
   auto& color = value_.array_;
   auto& frame = value_.array_;
   switch (command) {
-    case objx_command::error: return true;
     case objx_command::camera:
       return fprintf(fs.fs, "\nnewcam %s\n", name.c_str()) >= 0;
     case objx_command::environment:

@@ -1218,9 +1218,16 @@ namespace yocto {
 static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
     unordered_map<string, int>& mmap, unordered_map<string, int>& tmap,
     const load_params& params) {
+  // errors
+  auto set_parse_error = [&]() {
+    return set_sceneio_error(error, filename, false, "parse error");
+  };
+  auto set_type_error = [&]() {
+    return set_sceneio_error(error, filename, false, "type mismatch");
+  };
+
   // open file
   auto fs = open_file(filename);
-  // TODO: can we better here
   if (!fs) return set_sceneio_error(error, filename, false, "file not found");
 
   // parsing type
@@ -1251,7 +1258,8 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
   auto command = mtl_command{};
   auto value   = obj_value{};
   auto texture = obj_texture_info{};
-  while (read_mtl_command(fs, command, value, texture)) {
+  auto oerror = false;
+  while (read_mtl_command(fs, command, value, texture, oerror)) {
     if (command == mtl_command::material) {
       auto& material = scene.materials.emplace_back();
       get_obj_value(value, material.uri);
@@ -1341,6 +1349,8 @@ static bool load_mtl(const string& filename, yocto_scene& scene, string& error,
     }
   }
 
+  if(oerror) return set_parse_error();
+
   return true;
 }
 
@@ -1349,6 +1359,14 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
     const unordered_map<string, int>& mmap, unordered_map<string, int>& tmap,
     const unordered_map<string, vector<int>>& object_shapes,
     const load_params&                        params) {
+  // errors
+  auto set_parse_error = [&]() {
+    return set_sceneio_error(error, filename, false, "parse error");
+  };
+  auto set_type_error = [&]() {
+    return set_sceneio_error(error, filename, false, "type mismatch");
+  };
+
   // open file
   auto fs = open_file(filename);
   if (!fs) return set_sceneio_error(error, filename, false, "file not found");
@@ -1385,7 +1403,8 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
   auto command = objx_command{};
   auto value   = obj_value{};
   auto texture = obj_texture_info{};
-  while (read_objx_command(fs, command, value, texture)) {
+  auto oerror = false;
+  while (read_objx_command(fs, command, value, texture, oerror)) {
     if (command == objx_command::camera) {
       auto& camera = scene.cameras.emplace_back();
       get_obj_value(value, camera.uri);
@@ -1522,6 +1541,8 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
     }
   }
 
+  if(oerror) return set_parse_error();
+
   return true;
 }
 
@@ -1655,10 +1676,9 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
   auto value     = obj_value{};
   auto vertices  = vector<obj_vertex>{};
   auto vert_size = obj_vertex{};
-  while (read_obj_command(fs, command, value, vertices, vert_size)) {
-    if (command == obj_command::error) {
-      return set_parse_error();
-    } else if (command == obj_command::vertex) {
+  auto oerror = false;
+  while (read_obj_command(fs, command, value, vertices, vert_size, oerror)) {
+    if (command == obj_command::vertex) {
       if (!get_obj_value(value, opos.emplace_back())) return set_type_error();
     } else if (command == obj_command::normal) {
       if (!get_obj_value(value, onorm.emplace_back())) return set_type_error();
@@ -1780,7 +1800,7 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
   }
 
   // check error
-  if (command == obj_command::error) return set_parse_error();
+  if(oerror) return set_parse_error();
 
   // check for extension
   auto extname = fs::path(filename).replace_extension(".objx");
@@ -3879,9 +3899,10 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
   auto type    = ""s;
   auto xform   = identity3x4f;
   auto values  = vector<pbrt_value>{};
+  auto perror = false;
   while (!files.empty()) {
     if (!read_pbrt_command(
-            files.back(), command, name, type, xform, values, line)) {
+            files.back(), command, name, type, xform, values, line, perror)) {
       files.pop_back();
       continue;
     }
@@ -4051,6 +4072,8 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
         break;
     }
   }
+
+  if(perror) return set_parse_error();
 
   return true;
 }

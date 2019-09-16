@@ -222,8 +222,6 @@ struct obj_texture_info {
 // Obj command
 enum struct obj_command {
   // clang-format off
-  // reading errors
-  error,           
   // vertex data                 
   vertex, normal, texcoord,
   // element data
@@ -238,8 +236,6 @@ enum struct obj_command {
 // Mtl command
 enum struct mtl_command {
   // clang-format off
-  // reading errors
-  error,
   // material name and type (value)
   material, illum,
   // material colors
@@ -267,8 +263,6 @@ enum struct mtl_command {
 // Objx command
 enum struct objx_command {
   // clang-format off
-  // reading errors
-  error,
   // object names
   camera, environment, instance, procedural,
   // object frames
@@ -296,11 +290,11 @@ struct obj_value {
 
 // Read obj elements. Sets the command to `error` on error.
 bool read_obj_command(file_wrapper& fs, obj_command& command, obj_value& value,
-    vector<obj_vertex>& vertices, obj_vertex& vert_size);
+    vector<obj_vertex>& vertices, obj_vertex& vert_size, bool& error);
 bool read_mtl_command(file_wrapper& fs, mtl_command& command, obj_value& value,
-    obj_texture_info& texture, bool fliptr = true);
+    obj_texture_info& texture, bool& error, bool fliptr = true);
 bool read_objx_command(file_wrapper& fs, objx_command& command,
-    obj_value& value, obj_texture_info& texture);
+    obj_value& value, obj_texture_info& texture, bool& error);
 
 // Write obj elements. Returns false on error.
 bool write_obj_comment(file_wrapper& fs, const string& comment);
@@ -445,11 +439,12 @@ enum struct pbrt_command_ {
   // clang-format on
 };
 
-// Read pbrt commands
+// Read pbrt commands. Sets error on error.
 bool read_pbrt_command(file_wrapper& fs, pbrt_command_& command, string& name,
-    string& type, frame3f& xform, vector<pbrt_value>& values);
+    string& type, frame3f& xform, vector<pbrt_value>& values, bool& error);
 bool read_pbrt_command(file_wrapper& fs, pbrt_command_& command, string& name,
-    string& type, frame3f& xform, vector<pbrt_value>& values, string& buffer);
+    string& type, frame3f& xform, vector<pbrt_value>& values, string& buffer, 
+    bool& error);
 
 // Write pbrt commands
 void write_pbrt_comment(file_wrapper& fs, const string& comment);
