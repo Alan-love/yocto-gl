@@ -438,13 +438,13 @@ bool read_pbrt_command(file_wrapper& fs, pbrt_command_& command, string& name,
     string& buffer);
 
 // Write pbrt commands
-void write_pbrt_comment(file_wrapper& fs, const string& comment);
-void write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
+bool write_pbrt_comment(file_wrapper& fs, const string& comment);
+bool write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
     const string& name, const string& type, const frame3f& xform,
     const vector<pbrt_value>& values, bool texture_as_float = false);
-void write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
+bool write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
     const string& name = "", const frame3f& xform = identity3x4f);
-void write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
+bool write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
     const string& name, const string& type, const vector<pbrt_value>& values,
     bool texture_as_float = false);
 

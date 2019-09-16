@@ -148,14 +148,6 @@ static inline vector<string> split_string(
   return tokens;
 }
 
-static inline void checked_fprintf(file_wrapper& fs, const char* fmt, ...) {
-  va_list args1;
-  va_start(args1, fmt);
-  if (vfprintf(fs.fs, fmt, args1) < 0)
-    throw std::runtime_error("cannot write to file");
-  va_end(args1);
-}
-
 }  // namespace yocto
 
 // -----------------------------------------------------------------------------
@@ -2361,15 +2353,16 @@ bool read_pbrt_command(file_wrapper& fs, pbrt_command_& command, string& name,
 }
 
 // Write obj elements
-void write_pbrt_comment(file_wrapper& fs, const string& comment) {
+bool write_pbrt_comment(file_wrapper& fs, const string& comment) {
   auto lines = split_string(comment, "\n");
   for (auto& line : lines) {
-    checked_fprintf(fs, "# %s\n", line.c_str());
+    if(fprintf(fs.fs, "# %s\n", line.c_str())) return false;
   }
-  checked_fprintf(fs, "\n");
+  if(fprintf(fs.fs, "\n")) return false;
+  return true;
 }
 
-void write_pbrt_values(file_wrapper& fs, const vector<pbrt_value>& values) {
+bool write_pbrt_values(file_wrapper& fs, const vector<pbrt_value>& values) {
   static auto type_labels = unordered_map<pbrt_value_type, string>{
       {pbrt_value_type::real, "float"},
       {pbrt_value_type::integer, "integer"},
@@ -2385,175 +2378,176 @@ void write_pbrt_values(file_wrapper& fs, const vector<pbrt_value>& values) {
       {pbrt_value_type::spectrum, "spectrum"},
   };
   for (auto& value : values) {
-    checked_fprintf(fs, " \"%s %s\" ", type_labels.at(value.type).c_str());
+    if(fprintf(fs.fs, " \"%s %s\" ", type_labels.at(value.type).c_str(), value.name.c_str())) return false;
     switch (value.type) {
       case pbrt_value_type::real:
         if (value.vector1f.empty()) {
-          checked_fprintf(fs, "[ ");
-          for (auto& v : value.vector1f) checked_fprintf(fs, " %g", v);
-          checked_fprintf(fs, " ]");
+          if(fprintf(fs.fs, "[ ")) return false;
+          for (auto& v : value.vector1f) if(fprintf(fs.fs, " %g", v)) return false;
+          if(fprintf(fs.fs, " ]")) return false;
         } else {
-          checked_fprintf(fs, "%g", value.value1f);
+          if(fprintf(fs.fs, "%g", value.value1f)) return false;
         }
         break;
       case pbrt_value_type::integer:
         if (value.vector1f.empty()) {
-          checked_fprintf(fs, "[ ");
-          for (auto& v : value.vector1i) checked_fprintf(fs, " %d", v);
-          checked_fprintf(fs, " ]");
+          if(fprintf(fs.fs, "[ ")) return false;
+          for (auto& v : value.vector1i) if(fprintf(fs.fs, " %d", v)) return false;
+          if(fprintf(fs.fs, " ]")) return false;
         } else {
-          checked_fprintf(fs, "%d", value.value1i);
+          if(fprintf(fs.fs, "%d", value.value1i)) return false;
         }
         break;
       case pbrt_value_type::boolean:
-        checked_fprintf(fs, "\"%s\"", value.value1b ? "true" : "false");
+        if(fprintf(fs.fs, "\"%s\"", value.value1b ? "true" : "false")) return false;
         break;
       case pbrt_value_type::string:
-        checked_fprintf(fs, "\"%s\"", value.value1b ? "true" : "false");
+        if(fprintf(fs.fs, "\"%s\"", value.value1b ? "true" : "false")) return false;
         break;
       case pbrt_value_type::point:
       case pbrt_value_type::vector:
       case pbrt_value_type::normal:
       case pbrt_value_type::color:
         if (!value.vector3f.empty()) {
-          checked_fprintf(fs, "[ ");
+          if(fprintf(fs.fs, "[ ")) return false;
           for (auto& v : value.vector3f)
-            checked_fprintf(fs, " %g %g %g", v.x, v.y, v.z);
-          checked_fprintf(fs, " ]");
+            if(fprintf(fs.fs, " %g %g %g", v.x, v.y, v.z)) return false;
+          if(fprintf(fs.fs, " ]")) return false;
         } else {
-          checked_fprintf(fs, "[ %g %g %g ]", value.value3f.x, value.value3f.y,
-              value.value3f.z);
+          if(fprintf(fs.fs, "[ %g %g %g ]", value.value3f.x, value.value3f.y,
+              value.value3f.z)) return false;
         }
         break;
       case pbrt_value_type::spectrum:
-        checked_fprintf(fs, "[ ");
-        for (auto& v : value.vector1f) checked_fprintf(fs, " %g", v);
-        checked_fprintf(fs, " ]");
+        if(fprintf(fs.fs, "[ ")) return false;
+        for (auto& v : value.vector1f) if(fprintf(fs.fs, " %g", v)) return false;
+        if(fprintf(fs.fs, " ]")) return false;
         break;
       case pbrt_value_type::texture:
-        checked_fprintf(fs, "\"%s\"", value.value1s.c_str());
+        if(fprintf(fs.fs, "\"%s\"", value.value1s.c_str())) return false;
         break;
       case pbrt_value_type::point2:
       case pbrt_value_type::vector2:
         if (!value.vector2f.empty()) {
-          checked_fprintf(fs, "[ ");
+          if(fprintf(fs.fs, "[ ")) return false;
           for (auto& v : value.vector2f)
-            checked_fprintf(fs, " %g %g", v.x, v.y);
-          checked_fprintf(fs, " ]");
+            if(fprintf(fs.fs, " %g %g", v.x, v.y)) return false;
+          if(fprintf(fs.fs, " ]")) return false;
         } else {
-          checked_fprintf(fs, "[ %g %g ]", value.value2f.x, value.value2f.x);
+          if(fprintf(fs.fs, "[ %g %g ]", value.value2f.x, value.value2f.x)) return false;
         }
         break;
     }
   }
-  checked_fprintf(fs, "\n");
+  if(fprintf(fs.fs, "\n")) return false;
+  return true;
 }
 
-void write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
+bool write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
     const string& name, const string& type, const frame3f& xform,
     const vector<pbrt_value>& values, bool texture_float) {
   switch (command) {
-    case pbrt_command_::world_begin: checked_fprintf(fs, "WorldBegin\n"); break;
-    case pbrt_command_::world_end: checked_fprintf(fs, "WorldEnd\n"); break;
+    case pbrt_command_::world_begin: if(fprintf(fs.fs, "WorldBegin\n")) return false; break;
+    case pbrt_command_::world_end: if(fprintf(fs.fs, "WorldEnd\n")) return false; break;
     case pbrt_command_::attribute_begin:
-      checked_fprintf(fs, "AttributeBegin\n");
+      if(fprintf(fs.fs, "AttributeBegin\n")) return false;
       break;
     case pbrt_command_::attribute_end:
-      checked_fprintf(fs, "AttributeEnd\n");
+      if(fprintf(fs.fs, "AttributeEnd\n")) return false;
       break;
     case pbrt_command_::transform_begin:
-      checked_fprintf(fs, "TransformBegin\n");
+      if(fprintf(fs.fs, "TransformBegin\n")) return false;
       break;
     case pbrt_command_::transform_end:
-      checked_fprintf(fs, "TransformEnd\n");
+      if(fprintf(fs.fs, "TransformEnd\n")) return false;
       break;
     case pbrt_command_::object_begin:
-      checked_fprintf(fs, "ObjectBegin \"%s\"\n", name.c_str());
+      if(fprintf(fs.fs, "ObjectBegin \"%s\"\n", name.c_str())) return false;
       break;
-    case pbrt_command_::object_end: checked_fprintf(fs, "ObjectEnd\n"); break;
+    case pbrt_command_::object_end: if(fprintf(fs.fs, "ObjectEnd\n")) return false; break;
     case pbrt_command_::object_instance:
-      checked_fprintf(fs, "ObjectInstance \"%s\"\n", name.c_str());
+      if(fprintf(fs.fs, "ObjectInstance \"%s\"\n", name.c_str())) return false;
       break;
     case pbrt_command_::sampler:
-      checked_fprintf(fs, "Sampler \"%s\"", type.c_str());
+      if(fprintf(fs.fs, "Sampler \"%s\"", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::integrator:
-      checked_fprintf(fs, "Integrator \"%s\"", type.c_str());
+      if(fprintf(fs.fs, "Integrator \"%s\"", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::accelerator:
-      checked_fprintf(fs, "Accelerator \"%s\"", type.c_str());
+      if(fprintf(fs.fs, "Accelerator \"%s\"", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::film:
-      checked_fprintf(fs, "Film \"%s\"", type.c_str());
+      if(fprintf(fs.fs, "Film \"%s\"", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::filter:
-      checked_fprintf(fs, "Filter \"%s\"", type.c_str());
+      if(fprintf(fs.fs, "Filter \"%s\"", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::camera:
-      checked_fprintf(fs, "Camera \"%s\"", type.c_str());
+      if(fprintf(fs.fs, "Camera \"%s\"", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::shape:
-      checked_fprintf(fs, "Shape \"%s\"", type.c_str());
+      if(fprintf(fs.fs, "Shape \"%s\"", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::light:
-      checked_fprintf(fs, "Light \"%s\"", type.c_str());
+      if(fprintf(fs.fs, "Light \"%s\"", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::material:
-      checked_fprintf(fs, "Material \"%s\"", type.c_str());
+      if(fprintf(fs.fs, "Material \"%s\"", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::arealight:
-      checked_fprintf(fs, "AreaLight \"%s\"", type.c_str());
+      if(fprintf(fs.fs, "AreaLight \"%s\"", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::named_texture:
-      checked_fprintf(fs, "Texture \"%s\" \"%s\" \"%s\"", name.c_str(),
-          texture_float ? "float" : "rgb", type.c_str());
+      if(fprintf(fs.fs, "Texture \"%s\" \"%s\" \"%s\"", name.c_str(),
+          texture_float ? "float" : "rgb", type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::named_medium:
-      checked_fprintf(fs, "MakeNamedMedium \"%s\" \"string type\" \"%s\"",
-          name.c_str(), type.c_str());
+      if(fprintf(fs.fs, "MakeNamedMedium \"%s\" \"string type\" \"%s\"",
+          name.c_str(), type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::named_material:
-      checked_fprintf(fs, "MakeNamedMaterial \"%s\" \"string type\" \"%s\"",
-          name.c_str(), type.c_str());
+      if(fprintf(fs.fs, "MakeNamedMaterial \"%s\" \"string type\" \"%s\"",
+          name.c_str(), type.c_str())) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command_::include:
-      checked_fprintf(fs, "Include \"%s\"\n", name.c_str());
+      if(fprintf(fs.fs, "Include \"%s\"\n", name.c_str())) return false;
       break;
     case pbrt_command_::reverse_orientation:
-      checked_fprintf(fs, "ReverseOrientation\n");
+      if(fprintf(fs.fs, "ReverseOrientation\n")) return false;
       break;
     case pbrt_command_::set_transform:
-      checked_fprintf(fs,
+      if(fprintf(fs.fs,
           "Transform %g %g %g 0 %g %g %g 0 %g %g %g 0 %g %g %g 1\n", xform.x.x,
           xform.x.y, xform.x.z, xform.y.x, xform.y.y, xform.y.z, xform.z.x,
-          xform.z.y, xform.z.z, xform.o.x, xform.o.y, xform.o.z);
+          xform.z.y, xform.z.z, xform.o.x, xform.o.y, xform.o.z)) return false;
       break;
     case pbrt_command_::concat_transform:
-      checked_fprintf(fs,
+      if(fprintf(fs.fs,
           "ConcatTransform %g %g %g 0 %g %g %g 0 %g %g %g 0 %g %g %g 1\n",
           xform.x.x, xform.x.y, xform.x.z, xform.y.x, xform.y.y, xform.y.z,
-          xform.z.x, xform.z.y, xform.z.z, xform.o.x, xform.o.y, xform.o.z);
+          xform.z.x, xform.z.y, xform.z.z, xform.o.x, xform.o.y, xform.o.z)) return false;
       break;
     case pbrt_command_::lookat_transform:
-      checked_fprintf(fs, "LookAt %g %g %g %g %g %g %g %g %g\n", xform.x.x,
+      if(fprintf(fs.fs, "LookAt %g %g %g %g %g %g %g %g %g\n", xform.x.x,
           xform.x.y, xform.x.z, xform.y.x, xform.y.y, xform.y.z, xform.z.x,
-          xform.z.y, xform.z.z);
+          xform.z.y, xform.z.z)) return false;
       break;
     case pbrt_command_::use_material:
-      checked_fprintf(fs, "NamedMaterial \"%s\"\n", name.c_str());
+      if(fprintf(fs.fs, "NamedMaterial \"%s\"\n", name.c_str())) return false;
       break;
     case pbrt_command_::medium_interface: {
       auto interior = ""s, exterior = ""s;
@@ -2568,26 +2562,27 @@ void write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
         else
           interior.push_back(c);
       }
-      checked_fprintf(fs, "MediumInterface \"%s\" \"%s\"\n", interior.c_str(),
-          exterior.c_str());
+      if(fprintf(fs.fs, "MediumInterface \"%s\" \"%s\"\n", interior.c_str(),
+          exterior.c_str())) return false;
     } break;
     case pbrt_command_::active_transform:
-      checked_fprintf(fs, "ActiveTransform \"%s\"\n", name.c_str());
+      if(fprintf(fs.fs, "ActiveTransform \"%s\"\n", name.c_str())) return false;
       break;
     case pbrt_command_::coordinate_system_set:
-      checked_fprintf(fs, "CoordinateSystem \"%s\"\n", name.c_str());
+      if(fprintf(fs.fs, "CoordinateSystem \"%s\"\n", name.c_str())) return false;
       break;
     case pbrt_command_::coordinate_system_transform:
-      checked_fprintf(fs, "CoordinateSysTransform \"%s\"\n", name.c_str());
+      if(fprintf(fs.fs, "CoordinateSysTransform \"%s\"\n", name.c_str())) return false;
       break;
   }
+  return true;
 }
 
-void write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
+bool write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
     const string& name, const frame3f& xform) {
   return write_pbrt_command(fs, command, name, "", xform, {});
 }
-void write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
+bool write_pbrt_command(file_wrapper& fs, pbrt_command_ command,
     const string& name, const string& type, const vector<pbrt_value>& values,
     bool texture_as_float) {
   return write_pbrt_command(
