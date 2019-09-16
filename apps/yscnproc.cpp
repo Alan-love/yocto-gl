@@ -92,7 +92,7 @@ int main(int argc, const char** argv) {
   // load scene
   auto scene      = yocto_scene{};
   auto load_timer = print_timed("loading scene");
-  if (!load_scene(filename, scene, load_prms))
+  if (!load_scene_(filename, scene, load_prms))
     print_fatal("cannot load " + filename);
   load_timer.done();
 
@@ -172,7 +172,7 @@ int main(int argc, const char** argv) {
 
   // save scene
   auto save_timer = print_timed("saving scene");
-  if (!save_scene(output, scene, save_prms))
+  if (!save_scene_(output, scene, save_prms))
     print_fatal("cannot save " + output);
   save_timer.done();
 

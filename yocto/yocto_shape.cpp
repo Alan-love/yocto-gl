@@ -2948,50 +2948,58 @@ void make_shape_preset(vector<int>& points, vector<vec2i>& lines,
 // -----------------------------------------------------------------------------
 namespace yocto {
 
+// Result of file io operations.
+static inline bool set_shapeio_error(string& error,
+    const string& filename, bool save, const string& msg) {
+  error = (save ? "error saving " : "error loading ") + filename + ": " + msg;
+  return false;
+}
+
 // hack for CyHair data
-static shapeio_result load_cyhair_shape(const string& filename,
+static bool load_cyhair_shape(const string& filename,
     vector<vec2i>& lines, vector<vec3f>& positions, vector<vec3f>& normals,
     vector<vec2f>& texcoords, vector<vec4f>& color, vector<float>& radius,
+    string& error,
     bool flip_texcoord = true);
 
 // Load/Save a ply mesh
-static shapeio_result load_ply_shape(const string& filename,
+static bool load_ply_shape(const string& filename,
     vector<int>& points, vector<vec2i>& lines, vector<vec3i>& triangles,
     vector<vec4i>& quads, vector<vec4i>& quadspos, vector<vec4i>& quadsnorm,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, vector<vec4f>& color,
-    vector<float>& radius, bool flip_texcoord = true);
-static shapeio_result save_ply_shape(const string& filename,
+    vector<float>& radius, string& error, bool flip_texcoord = true);
+static bool save_ply_shape(const string& filename,
     const vector<int>& points, const vector<vec2i>& lines,
     const vector<vec3i>& triangles, const vector<vec4i>& quads,
     const vector<vec4i>& quadspos, const vector<vec4i>& quadsnorm,
     const vector<vec4i>& quadstexcoord, const vector<vec3f>& positions,
     const vector<vec3f>& normals, const vector<vec2f>& texcoords,
     const vector<vec4f>& colors, const vector<float>& radius,
-    bool ascii = false, bool flip_texcoord = true);
+    string& error, bool ascii = false, bool flip_texcoord = true);
 
 // Load/Save an OBJ mesh
-static shapeio_result load_obj_shape(const string& filename,
+static bool load_obj_shape(const string& filename,
     vector<int>& points, vector<vec2i>& lines, vector<vec3i>& triangles,
     vector<vec4i>& quads, vector<vec4i>& quadspos, vector<vec4i>& quadsnorm,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, bool facevarying,
-    bool flip_texcoord = true);
-static shapeio_result save_obj_shape(const string& filename,
+    string& error,bool flip_texcoord = true);
+static bool save_obj_shape(const string& filename,
     const vector<int>& points, const vector<vec2i>& lines,
     const vector<vec3i>& triangles, const vector<vec4i>& quads,
     const vector<vec4i>& quadspos, const vector<vec4i>& quadsnorm,
     const vector<vec4i>& quadstexcoord, const vector<vec3f>& positions,
     const vector<vec3f>& normals, const vector<vec2f>& texcoords,
-    bool flip_texcoord = true);
+    string& error,bool flip_texcoord = true);
 
 // Load ply mesh
-shapeio_result load_shape(const string& filename, vector<int>& points,
+bool load_shape(const string& filename, vector<int>& points,
     vector<vec2i>& lines, vector<vec3i>& triangles, vector<vec4i>& quads,
     vector<vec4i>& quadspos, vector<vec4i>& quadsnorm,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, vector<vec4f>& colors,
-    vector<float>& radius, bool preserve_facevarrying) {
+    vector<float>& radius, bool preserve_facevarrying, string& error) {
   points        = {};
   lines         = {};
   triangles     = {};
@@ -3009,49 +3017,50 @@ shapeio_result load_shape(const string& filename, vector<int>& points,
   if (ext == ".ply" || ext == ".PLY") {
     return load_ply_shape(filename, points, lines, triangles, quads, quadspos,
         quadsnorm, quadstexcoord, positions, normals, texcoords, colors,
-        radius);
+        radius, error);
   } else if (ext == ".obj" || ext == ".OBJ") {
     return load_obj_shape(filename, points, lines, triangles, quads, quadspos,
         quadsnorm, quadstexcoord, positions, normals, texcoords,
-        preserve_facevarrying);
+        preserve_facevarrying, error);
   } else if (ext == ".hair" || ext == ".HAIR") {
     return load_cyhair_shape(
-        filename, lines, positions, normals, texcoords, colors, radius);
+        filename, lines, positions, normals, texcoords, colors, radius, error);
   } else {
-    return shapeio_error(filename, false, "unsupported format");
+    return set_shapeio_error(error, filename, false, "unsupported format");
   }
 }
 
 // Save ply mesh
-shapeio_result save_shape(const string& filename, const vector<int>& points,
+bool save_shape(const string& filename, const vector<int>& points,
     const vector<vec2i>& lines, const vector<vec3i>& triangles,
     const vector<vec4i>& quads, const vector<vec4i>& quadspos,
     const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
     const vector<vec3f>& positions, const vector<vec3f>& normals,
     const vector<vec2f>& texcoords, const vector<vec4f>& colors,
-    const vector<float>& radius, bool ascii) {
+    const vector<float>& radius, string& error, bool ascii) {
   auto ext = fs::path(filename).extension().string();
   if (ext == ".ply" || ext == ".PLY") {
     return save_ply_shape(filename, points, lines, triangles, quads, quadspos,
         quadsnorm, quadstexcoord, positions, normals, texcoords, colors, radius,
+        error,
         ascii);
   } else if (ext == ".obj" || ext == ".OBJ") {
     return save_obj_shape(filename, points, lines, triangles, quads, quadspos,
-        quadsnorm, quadstexcoord, positions, normals, texcoords);
+        quadsnorm, quadstexcoord, positions, normals, texcoords, error);
   } else {
-    return shapeio_error(filename, true, "unsupported format");
+    return set_shapeio_error(error, filename, true, "unsupported format");
   }
 }
 
-static shapeio_result load_ply_shape(const string& filename,
+static bool load_ply_shape(const string& filename,
     vector<int>& points, vector<vec2i>& lines, vector<vec3i>& triangles,
     vector<vec4i>& quads, vector<vec4i>& quadspos, vector<vec4i>& quadsnorm,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, vector<vec4f>& colors,
-    vector<float>& radius, bool flip_texcoord) {
+    vector<float>& radius, string& error, bool flip_texcoord) {
   // open ply
   auto fs = open_file(filename, "rb");
-  if (!fs) return shapeio_error(filename, false, "file not found");
+  if (!fs) return set_shapeio_error(error, filename, false, "file not found");
 
   // load elements
   auto format   = ply_format{};
@@ -3111,7 +3120,7 @@ static shapeio_result load_ply_shape(const string& filename,
   }
 
   if (positions.empty())
-    return shapeio_error(filename, false, "missing vertex positions");
+    return set_shapeio_error(error, filename, false, "missing vertex positions");
 
   // fix texture coordinated
   if (flip_texcoord && !texcoords.empty()) {
@@ -3120,18 +3129,18 @@ static shapeio_result load_ply_shape(const string& filename,
 
   merge_triangles_and_quads(triangles, quads, false);
 
-  return shapeio_ok();
+  return true;
 }
 
 // Save ply mesh
-static shapeio_result save_ply_shape(const string& filename,
+static bool save_ply_shape(const string& filename,
     const vector<int>& points, const vector<vec2i>& lines,
     const vector<vec3i>& triangles, const vector<vec4i>& quads,
     const vector<vec4i>& quadspos, const vector<vec4i>& quadsnorm,
     const vector<vec4i>& quadstexcoord, const vector<vec3f>& positions,
     const vector<vec3f>& normals, const vector<vec2f>& texcoords,
-    const vector<vec4f>& colors, const vector<float>& radius, bool ascii,
-    bool flip_texcoord) {
+    const vector<vec4f>& colors, const vector<float>& radius, string& error, 
+    bool ascii, bool flip_texcoord) {
   if (!quadspos.empty()) {
     auto split_quads         = vector<vec4i>{};
     auto split_positions     = vector<vec3f>{};
@@ -3141,12 +3150,12 @@ static shapeio_result save_ply_shape(const string& filename,
         split_texturecoords, quadspos, quadsnorm, quadstexcoord, positions,
         normals, texcoords);
     return save_ply_shape(filename, {}, {}, {}, split_quads, {}, {}, {},
-        split_positions, split_normals, split_texturecoords, {}, {}, ascii,
+        split_positions, split_normals, split_texturecoords, {}, {}, error, ascii,
         flip_texcoord);
   }
 
   auto fs = open_file(filename, "wb");
-  if (!fs) return shapeio_error(filename, true, "file not found");
+  if (!fs) return set_shapeio_error(error, filename, true, "file not found");
 
   // format
   auto format = ply_format::binary_little_endian;
@@ -3298,19 +3307,19 @@ static shapeio_result save_ply_shape(const string& filename,
     }
   }
 
-  return shapeio_ok();
+  return true;
 }
 
 // Load obj mesh
-static shapeio_result load_obj_shape(const string& filename,
+static bool load_obj_shape(const string& filename,
     vector<int>& points, vector<vec2i>& lines, vector<vec3i>& triangles,
     vector<vec4i>& quads, vector<vec4i>& quadspos, vector<vec4i>& quadsnorm,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, bool facevarying,
-    bool flip_texcoord) {
+    string& error, bool flip_texcoord) {
   // open obj
   auto fs = open_file(filename);
-  if (!fs) return shapeio_error(filename, false, "file not found");
+  if (!fs) return set_shapeio_error(error, filename, false, "file not found");
 
   // obj vertices
   std::deque<vec3f> opos      = std::deque<vec3f>();
@@ -3453,7 +3462,7 @@ static shapeio_result load_obj_shape(const string& filename,
   }
 
   if (positions.empty())
-    return shapeio_error(filename, false, "missing vertex positions");
+    return set_shapeio_error(error, filename, false, "missing vertex positions");
 
   // fix texture coordinated
   if (flip_texcoord && !texcoords.empty()) {
@@ -3465,19 +3474,19 @@ static shapeio_result load_obj_shape(const string& filename,
     merge_triangles_and_quads(triangles, quads, false);
   }
 
-  return shapeio_ok();
+  return true;
 }
 
 // Load ply mesh
-static shapeio_result save_obj_shape(const string& filename,
+static bool save_obj_shape(const string& filename,
     const vector<int>& points, const vector<vec2i>& lines,
     const vector<vec3i>& triangles, const vector<vec4i>& quads,
     const vector<vec4i>& quadspos, const vector<vec4i>& quadsnorm,
     const vector<vec4i>& quadstexcoord, const vector<vec3f>& positions,
-    const vector<vec3f>& normals, const vector<vec2f>& texcoords,
+    const vector<vec3f>& normals, const vector<vec2f>& texcoords, string& error,
     bool flip_texcoord) {
   auto fs = open_file(filename, "w");
-  if (!fs) return shapeio_error(filename, true, "file not found");
+  if (!fs) return set_shapeio_error(error, filename, true, "file not found");
 
   write_obj_comment(
       fs, "Written by Yocto/GL\nhttps://github.com/xelatihy/yocto-gl\n");
@@ -3557,7 +3566,7 @@ static shapeio_result save_obj_shape(const string& filename,
     write_obj_command(fs, obj_command::face, {}, elems);
   }
 
-  return shapeio_ok();
+  return true;
 }
 
 }  // namespace yocto
@@ -3581,11 +3590,11 @@ struct cyhair_data {
   vec3f                 default_color        = zero3f;
 };
 
-static shapeio_result load_cyhair(const string& filename, cyhair_data& hair) {
+static bool load_cyhair(const string& filename, cyhair_data& hair, string& error) {
   // open file
   hair     = {};
   auto fs_ = open_file(filename, "b");
-  if (!fs_) return shapeio_error(filename, false, "file not found");
+  if (!fs_) return set_shapeio_error(error, filename, false, "file not found");
   auto fs = fs_.fs;
 
   // Bytes 0-3    Must be "HAIR" in ascii code (48 41 49 52)
@@ -3696,16 +3705,16 @@ static shapeio_result load_cyhair(const string& filename, cyhair_data& hair) {
     }
   }
 
-  return shapeio_ok();
+  return true;
 }
 
-static shapeio_result load_cyhair_shape(const string& filename,
+static bool load_cyhair_shape(const string& filename,
     vector<vec2i>& lines, vector<vec3f>& positions, vector<vec3f>& normals,
-    vector<vec2f>& texcoords, vector<vec4f>& color, vector<float>& radius,
+    vector<vec2f>& texcoords, vector<vec4f>& color, vector<float>& radius, string& error,
     bool flip_texcoord) {
   // load hair file
   auto hair = cyhair_data();
-  if (auto err = load_cyhair(filename, hair); !err) return err;
+  if (!load_cyhair(filename, hair, error)) return false;
 
   // generate curve data
   for (auto& strand : hair.strands) {
@@ -3744,7 +3753,7 @@ static shapeio_result load_cyhair_shape(const string& filename,
   // fix colors
   for (auto& c : color) c = {pow(xyz(c), 2.2f), c.w};
 
-  return shapeio_ok();
+  return true;
 }
 
 }  // namespace yocto

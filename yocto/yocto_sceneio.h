@@ -56,17 +56,6 @@
 
 namespace yocto {
 
-// Result of file io operations.
-struct [[nodiscard]] sceneio_result {
-  string error = "";
-         operator bool() const { return error.empty(); }
-};
-static inline sceneio_result sceneio_ok() { return {}; }
-static inline sceneio_result sceneio_error(
-    const string& filename, bool save, const string& msg) {
-  return {(save ? "error saving " : "error loading ") + filename + ": " + msg};
-}
-
 // Scene load params
 struct load_params {
   bool               notextures  = false;
@@ -84,9 +73,13 @@ struct save_params {
 };
 
 // Load/save a scene in the supported formats.
-sceneio_result load_scene(
+bool load_scene(
+    const string& filename, yocto_scene& scene, string& error, const load_params& params = {});
+bool save_scene(const string& filename, const yocto_scene& scene, string& error, 
+    const save_params& params = {});
+bool load_scene_(
     const string& filename, yocto_scene& scene, const load_params& params = {});
-sceneio_result save_scene(const string& filename, const yocto_scene& scene,
+bool save_scene_(const string& filename, const yocto_scene& scene, 
     const save_params& params = {});
 
 }  // namespace yocto

@@ -298,25 +298,18 @@ void difference(image<vec4f>& diff, const image<vec4f>& a,
 // -----------------------------------------------------------------------------
 namespace yocto {
 
-// Result of file io operations.
-struct [[nodiscard]] imageio_result {
-  string error = "";
-         operator bool() const { return error.empty(); }
-};
-static inline imageio_result imageio_ok() { return {}; }
-static inline imageio_result imageio_error(
-    const string& filename, bool save, const string& msg) {
-  return {(save ? "error saving " : "error loading ") + filename + ": " + msg};
-}
-
 // Check if an image is HDR based on filename.
 bool is_hdr_filename(const string& filename);
 
 // Loads/saves a 4 channels float/byte image in linear color space.
-imageio_result load_image(const string& filename, image<vec4f>& img);
-imageio_result save_image(const string& filename, const image<vec4f>& img);
-imageio_result load_imageb(const string& filename, image<vec4b>& img);
-imageio_result save_imageb(const string& filename, const image<vec4b>& img);
+bool load_image(const string& filename, image<vec4f>& img, string& error);
+bool save_image(const string& filename, const image<vec4f>& img, string& error);
+bool load_image(const string& filename, image<vec4b>& img, string& error);
+bool save_image(const string& filename, const image<vec4b>& img, string& error);
+bool load_image(const string& filename, image<vec4f>& img);
+bool save_image(const string& filename, const image<vec4f>& img);
+bool load_image(const string& filename, image<vec4b>& img);
+bool save_image(const string& filename, const image<vec4b>& img);
 
 }  // namespace yocto
 
@@ -478,8 +471,10 @@ void make_volpreset(volume<float>& vol, const string& type);
 namespace yocto {
 
 // Loads/saves a 1 channel volume.
-imageio_result load_volume(const string& filename, volume<float>& vol);
-imageio_result save_volume(const string& filename, const volume<float>& vol);
+bool load_volume(const string& filename, volume<float>& vol, string& error);
+bool save_volume(const string& filename, const volume<float>& vol, string& error);
+bool load_volume(const string& filename, volume<float>& vol);
+bool save_volume(const string& filename, const volume<float>& vol);
 
 }  // namespace yocto
 

@@ -458,7 +458,7 @@ void load_element(
               fs::path(filename).parent_path() / texture.uri, texture.hdr))
         throw std::runtime_error("cannot load " + texture.uri);
     } else {
-      if (!load_imageb(
+      if (!load_image(
               fs::path(filename).parent_path() / texture.uri, texture.ldr))
         throw std::runtime_error("cannot load " + texture.uri);
     }
@@ -755,7 +755,7 @@ void update(const opengl_window& win, app_state& app) {
         scn.bvh_done    = false;
         scn.lights_done = false;
         task.result     = std::async(std::launch::async, [&scn]() {
-          if (!load_scene(scn.filename, scn.scene, scn.load_prms))
+          if (!load_scene_(scn.filename, scn.scene, scn.load_prms))
             throw std::runtime_error("cannot load scene " + scn.filename);
           tesselate_subdivs(scn.scene);
           if (scn.add_skyenv) add_sky(scn.scene);
@@ -794,7 +794,7 @@ void update(const opengl_window& win, app_state& app) {
             if (!save_image(scn.imagename, scn.render))
               throw std::runtime_error("cannot save " + scn.imagename);
           } else {
-            if (!save_imageb(
+            if (!save_image(
                     scn.imagename, tonemapb(scn.render, scn.tonemap_prms)))
               throw std::runtime_error("cannot save " + scn.imagename);
           }
@@ -803,7 +803,7 @@ void update(const opengl_window& win, app_state& app) {
       case app_task_type::save_scene: {
         log_glinfo(win, "start saving " + scn.outname);
         task.result = std::async(std::launch::async, [&scn]() {
-          if (!save_scene(scn.outname, scn.scene, scn.save_prms))
+          if (!save_scene_(scn.outname, scn.scene, scn.save_prms))
             throw std::runtime_error("cannot save " + scn.outname);
         });
       } break;

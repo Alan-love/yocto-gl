@@ -449,7 +449,7 @@ void update(const opengl_window& win, app_state& app) {
           if (!is_hdr_filename(img.outname)) {
             auto ldr = image<vec4b>{};
             float_to_byte(ldr, img.display);
-            if (!save_imageb(img.outname, ldr))
+            if (!save_image(img.outname, ldr))
               throw std::runtime_error("cannot save " + img.outname);
           } else {
             auto aux = image<vec4f>{};

@@ -581,31 +581,33 @@ void distance_to_color(vector<vec4f>& colors, const vector<float>& distances,
 // -----------------------------------------------------------------------------
 namespace yocto {
 
-// Result of file io operations.
-struct [[nodiscard]] shapeio_result {
-  string error = "";
-         operator bool() const { return error.empty(); }
-};
-static inline shapeio_result shapeio_ok() { return {}; }
-static inline shapeio_result shapeio_error(
-    const string& filename, bool save, const string& msg) {
-  return {(save ? "error saving " : "error loading ") + filename + ": " + msg};
-}
-
 // Load/Save a shape
-shapeio_result load_shape(const string& filename, vector<int>& points,
+bool load_shape(const string& filename, vector<int>& points,
     vector<vec2i>& lines, vector<vec3i>& triangles, vector<vec4i>& quads,
     vector<vec4i>& quadspos, vector<vec4i>& quadsnorm,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, vector<vec4f>& colors,
-    vector<float>& radius, bool facevarying);
-shapeio_result save_shape(const string& filename, const vector<int>& points,
+    vector<float>& radius, bool facevarying, string& error);
+bool save_shape(const string& filename, const vector<int>& points,
     const vector<vec2i>& lines, const vector<vec3i>& triangles,
     const vector<vec4i>& quads, const vector<vec4i>& quadspos,
     const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
     const vector<vec3f>& positions, const vector<vec3f>& normals,
     const vector<vec2f>& texcoords, const vector<vec4f>& colors,
-    const vector<float>& radius, bool ascii = false);
+    const vector<float>& radius, string& error);
+bool load_shape(const string& filename, vector<int>& points,
+    vector<vec2i>& lines, vector<vec3i>& triangles, vector<vec4i>& quads,
+    vector<vec4i>& quadspos, vector<vec4i>& quadsnorm,
+    vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
+    vector<vec3f>& normals, vector<vec2f>& texcoords, vector<vec4f>& colors,
+    vector<float>& radius, bool facevarying);
+bool save_shape(const string& filename, const vector<int>& points,
+    const vector<vec2i>& lines, const vector<vec3i>& triangles,
+    const vector<vec4i>& quads, const vector<vec4i>& quadspos,
+    const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
+    const vector<vec3f>& positions, const vector<vec3f>& normals,
+    const vector<vec2f>& texcoords, const vector<vec4f>& colors,
+    const vector<float>& radius);
 
 }  // namespace yocto
 

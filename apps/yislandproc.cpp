@@ -875,8 +875,8 @@ void load_island_elements(const string& filename, const string& dirname,
   // rename materials and shapes
 }
 
-sceneio_result load_textures(
-    const string& filename, yocto_scene& scene, const load_params& params);
+bool load_textures(
+    const string& filename, yocto_scene& scene, string& error, const load_params& params);
 
 void load_island_scene(
     const string& filename, yocto_scene& scene, const load_params& params) {
@@ -898,8 +898,9 @@ void load_island_scene(
     }
 
     // load meshes and textures
-    if (auto err = load_textures(filename, scene, params); !err)
-      throw std::runtime_error(err.error);
+    auto err = ""s;
+    if (!load_textures(filename, scene, err, params))
+      throw std::runtime_error(err);
   } catch (std::exception& e) {
     throw std::runtime_error("error loading scene "s + e.what());
   }
@@ -1072,7 +1073,7 @@ int main(int argc, const char** argv) {
   save_prms.notextures = false;
   save_prms.noparallel = false;
   // save_prms.ply_instances = true;
-  if (!save_scene(output, scene, save_prms))
+  if (!save_scene_(output, scene, save_prms))
     print_fatal("cannot save " + output);
   save_timer.done();
 

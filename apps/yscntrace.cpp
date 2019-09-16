@@ -114,7 +114,7 @@ int main(int argc, const char* argv[]) {
   // scene loading
   auto scene      = yocto_scene{};
   auto load_timer = print_timed("loading scene");
-  if (!load_scene(filename, scene, load_prms))
+  if (!load_scene_(filename, scene, load_prms))
     print_fatal("cannot load scene " + filename);
   load_timer.done();
 
@@ -175,7 +175,7 @@ int main(int argc, const char* argv[]) {
         if (!save_image(outfilename, logo ? add_logo(render) : render))
           print_fatal("cannot save " + outfilename);
       } else {
-        if (!save_imageb(
+        if (!save_image(
                 outfilename, logo ? add_logo(tonemapb(render, tonemap_prms))
                                   : tonemapb(render, tonemap_prms)))
           print_fatal("cannot save " + outfilename);
@@ -189,7 +189,7 @@ int main(int argc, const char* argv[]) {
     if (!save_image(imfilename, logo ? add_logo(render) : render))
       print_fatal("cannot save " + imfilename);
   } else {
-    if (!save_imageb(imfilename, logo ? add_logo(tonemapb(render, tonemap_prms))
+    if (!save_image(imfilename, logo ? add_logo(tonemapb(render, tonemap_prms))
                                       : tonemapb(render, tonemap_prms)))
       print_fatal("cannot save " + imfilename);
   }
