@@ -632,6 +632,7 @@ bool save_shapes(const string& filename, const yocto_scene& scene,
     }
     return true;
   } else {
+    error      = "";
     auto mutex = std::mutex();
     parallel_foreach(
         scene.shapes,
@@ -661,7 +662,7 @@ bool save_shapes(const string& filename, const yocto_scene& scene,
           }
         },
         params.cancel);
-    return false;
+    return error.empty();
   }
 }
 
@@ -4135,7 +4136,7 @@ static bool save_pbrt_scene(const string& filename, const yocto_scene& scene,
   auto dirname = fs::path(filename).parent_path();
   for (auto& shape : scene.shapes) {
     auto err = ""s;
-    if (save_shape((dirname / shape.uri).replace_extension(".ply"),
+    if (!save_shape((dirname / shape.uri).replace_extension(".ply"),
             shape.points, shape.lines, shape.triangles, shape.quads,
             shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
             shape.positions, shape.normals, shape.texcoords, shape.colors,
