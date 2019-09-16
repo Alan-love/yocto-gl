@@ -238,13 +238,19 @@ inline string format_num(uint64_t num) {
 }
 
 // Print traces for timing and program debugging
+struct scoped_timer {
+  int64_t start_time = -1;
+  scoped_timer() { }
+  scoped_timer(int64_t start) : start_time{start} { }
+  void stop() {
+    if(start_time >= 0)
+    printf(" in %s\n", format_duration(get_time() - start_time).c_str());
+  }
+  ~scoped_timer() {
+    stop();
+  }
+};
 inline auto print_timed(const string& msg) {
-  struct scoped_timer {
-    int64_t start_time = -1;
-    ~scoped_timer() {
-      printf(" in %s\n", format_duration(get_time() - start_time).c_str());
-    }
-  };
   printf("%s", msg.c_str());
   fflush(stdout);
   // print_info(fmt + " [started]", args...);

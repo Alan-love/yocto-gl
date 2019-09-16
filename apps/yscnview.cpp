@@ -984,18 +984,18 @@ void load_element(
     load_volume(fs::path(filename).parent_path() / texture.uri, texture.vol);
   } else if (type == typeid(yocto_shape)) {
     auto& shape = scene.shapes[index];
-    load_shape(fs::path(filename).parent_path() / shape.uri, shape.points,
+    if(!load_shape(fs::path(filename).parent_path() / shape.uri, shape.points,
         shape.lines, shape.triangles, shape.quads, shape.quadspos,
         shape.quadsnorm, shape.quadstexcoord, shape.positions, shape.normals,
-        shape.texcoords, shape.colors, shape.radius, false);
+        shape.texcoords, shape.colors, shape.radius, false)) throw std::runtime_error("cannot load " + shape.uri);
   } else if (type == typeid(yocto_subdiv)) {
     // TODO: this needs more fixing?
     auto& subdiv = scene.subdivs[index];
-    load_shape(fs::path(filename).parent_path() / subdiv.uri, subdiv.points,
+    if(!load_shape(fs::path(filename).parent_path() / subdiv.uri, subdiv.points,
         subdiv.lines, subdiv.triangles, subdiv.quads, subdiv.quadspos,
         subdiv.quadsnorm, subdiv.quadstexcoord, subdiv.positions,
         subdiv.normals, subdiv.texcoords, subdiv.colors, subdiv.radius,
-        subdiv.facevarying);
+        subdiv.facevarying)) throw std::runtime_error("cannot load " + subdiv.uri);
     tesselate_subdiv(scene, scene.subdivs[index]);
   } else {
     throw std::runtime_error("unsupported type "s + type.name());

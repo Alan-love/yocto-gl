@@ -112,6 +112,8 @@ struct file_wrapper {
   file_wrapper& operator=(const file_wrapper&) = delete;
   ~file_wrapper();
 
+  operator bool() const { return fs != nullptr; }
+
   FILE*  fs       = nullptr;
   string filename = "";
   string mode     = "rt";

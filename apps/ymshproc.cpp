@@ -72,20 +72,18 @@ int main(int argc, const char** argv) {
 
   // load mesh
   auto shape = yocto_shape{};
-  try {
-    auto timer = print_timed("loading shape");
-    load_shape(filename, shape.points, shape.lines, shape.triangles,
-        shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
-        shape.positions, shape.normals, shape.texcoords, shape.colors,
-        shape.radius, facevarying);
-  } catch (const std::exception& e) {
-    print_fatal(e.what());
-  }
+  auto load_timer = print_timed("loading shape");
+  if (!load_shape(filename, shape.points, shape.lines, shape.triangles,
+          shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
+          shape.positions, shape.normals, shape.texcoords, shape.colors,
+          shape.radius, facevarying))
+    print_fatal("cannot load " + filename);
+  load_timer.stop();
 
   // transform
   if (uscale != 1) scale *= uscale;
   if (translate != zero3f || rotate != zero3f || scale != vec3f{1}) {
-    auto timer = print_timed("transforming shape");
+    auto xform_timer = print_timed("transforming shape");
     auto xform = translation_frame(translate) * scaling_frame(scale) *
                  rotation_frame({1, 0, 0}, radians(rotate.x)) *
                  rotation_frame({0, 0, 1}, radians(rotate.z)) *
@@ -97,14 +95,14 @@ int main(int argc, const char** argv) {
 
   // compute normals
   if (normals) {
-    auto timer    = print_timed("computing normals");
+    auto normals_timer    = print_timed("computing normals");
     shape.normals = compute_normals(shape);
     if (!shape.quadspos.empty()) shape.quadsnorm = shape.quadspos;
   }
 
   // compute geodesics and store them as colors
   if (geodesic_source >= 0 || num_geodesic_samples > 0) {
-    auto timer       = print_timed("computing geodesics");
+    auto geodesic_timer       = print_timed("computing geodesics");
     auto adjacencies = face_adjacencies(shape.triangles);
     auto solver      = make_geodesic_solver(
         shape.triangles, adjacencies, shape.positions);
@@ -120,14 +118,13 @@ int main(int argc, const char** argv) {
   }
 
   // save mesh
-  try {
-    auto timer = print_timed("saving shape");
-    save_shape(output, shape.points, shape.lines, shape.triangles, shape.quads,
-        shape.quadspos, shape.quadsnorm, shape.quadstexcoord, shape.positions,
-        shape.normals, shape.texcoords, shape.colors, shape.radius);
-  } catch (const std::exception& e) {
-    print_fatal(e.what());
-  }
+  auto save_timer = print_timed("saving shape");
+  if (!save_shape(output, shape.points, shape.lines, shape.triangles,
+          shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
+          shape.positions, shape.normals, shape.texcoords, shape.colors,
+          shape.radius))
+    print_fatal("cannot save " + output);
+  save_timer.stop();
 
   // done
   return 0;

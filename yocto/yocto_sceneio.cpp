@@ -391,18 +391,18 @@ void load_shape(yocto_shape& shape, const string& dirname) {
         shape.normals, shape.texcoords, shape.colors, shape.radius, type);
     shape.uri = nfilename;
   } else {
-    load_shape(fs::path(dirname) / shape.uri, shape.points, shape.lines,
+    if(!load_shape(fs::path(dirname) / shape.uri, shape.points, shape.lines,
         shape.triangles, shape.quads, shape.quadspos, shape.quadsnorm,
         shape.quadstexcoord, shape.positions, shape.normals, shape.texcoords,
-        shape.colors, shape.radius, false);
+        shape.colors, shape.radius, false)) throw std::runtime_error("cannot load " + shape.uri);
   }
 }
 
 void save_shape(const yocto_shape& shape, const string& dirname) {
-  save_shape(fs::path(dirname) / shape.uri, shape.points, shape.lines,
+  if(!save_shape(fs::path(dirname) / shape.uri, shape.points, shape.lines,
       shape.triangles, shape.quads, shape.quadspos, shape.quadsnorm,
       shape.quadstexcoord, shape.positions, shape.normals, shape.texcoords,
-      shape.colors, shape.radius);
+      shape.colors, shape.radius)) throw std::runtime_error("cannot save " + shape.uri);
 }
 
 void load_subdiv(yocto_subdiv& subdiv, const string& dirname) {
@@ -414,18 +414,18 @@ void load_subdiv(yocto_subdiv& subdiv, const string& dirname) {
         subdiv.radius, type);
     subdiv.uri = nfilename;
   } else {
-    load_shape(fs::path(dirname) / subdiv.uri, subdiv.points, subdiv.lines,
+    if(!load_shape(fs::path(dirname) / subdiv.uri, subdiv.points, subdiv.lines,
         subdiv.triangles, subdiv.quads, subdiv.quadspos, subdiv.quadsnorm,
         subdiv.quadstexcoord, subdiv.positions, subdiv.normals,
-        subdiv.texcoords, subdiv.colors, subdiv.radius, subdiv.facevarying);
+        subdiv.texcoords, subdiv.colors, subdiv.radius, subdiv.facevarying)) throw std::runtime_error("cannot load " + subdiv.uri);
   }
 }
 
 void save_subdiv(const yocto_subdiv& subdiv, const string& dirname) {
-  save_shape(fs::path(dirname) / subdiv.uri, subdiv.points, subdiv.lines,
+  if(!save_shape(fs::path(dirname) / subdiv.uri, subdiv.points, subdiv.lines,
       subdiv.triangles, subdiv.quads, subdiv.quadspos, subdiv.quadsnorm,
       subdiv.quadstexcoord, subdiv.positions, subdiv.normals, subdiv.texcoords,
-      subdiv.colors, subdiv.radius);
+      subdiv.colors, subdiv.radius)) throw std::runtime_error("cannot save " + subdiv.uri);
 }
 
 // Load json meshes
@@ -1870,24 +1870,19 @@ static void load_ply_scene(
     const string& filename, yocto_scene& scene, const load_params& params) {
   scene = {};
 
-  try {
-    // load ply mesh
-    scene.shapes.push_back({});
-    auto& shape = scene.shapes.back();
-    load_shape(filename, shape.points, shape.lines, shape.triangles,
-        shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
-        shape.positions, shape.normals, shape.texcoords, shape.colors,
-        shape.radius, false);
+  // load ply mesh
+  scene.shapes.push_back({});
+  auto& shape = scene.shapes.back();
+  if(!load_shape(filename, shape.points, shape.lines, shape.triangles,
+      shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
+      shape.positions, shape.normals, shape.texcoords, shape.colors,
+      shape.radius, false)) throw std::runtime_error("cannot load " + filename);
 
-    // add instance
-    auto instance  = yocto_instance{};
-    instance.uri   = shape.uri;
-    instance.shape = 0;
-    scene.instances.push_back(instance);
-
-  } catch (const std::exception& e) {
-    throw std::runtime_error("cannot load scene " + filename + "\n" + e.what());
-  }
+  // add instance
+  auto instance  = yocto_instance{};
+  instance.uri   = shape.uri;
+  instance.shape = 0;
+  scene.instances.push_back(instance);
 
   // fix scene
   scene.uri = fs::path(filename).filename();
@@ -1904,15 +1899,11 @@ static void save_ply_scene(const string& filename, const yocto_scene& scene,
   if (scene.shapes.empty()) {
     throw std::runtime_error("cannot save empty scene " + filename);
   }
-  try {
-    auto& shape = scene.shapes.front();
-    save_shape(filename, shape.points, shape.lines, shape.triangles,
-        shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
-        shape.positions, shape.normals, shape.texcoords, shape.colors,
-        shape.radius);
-  } catch (const std::exception& e) {
-    throw std::runtime_error("cannot save scene " + filename + "\n" + e.what());
-  }
+  auto& shape = scene.shapes.front();
+  if(!save_shape(filename, shape.points, shape.lines, shape.triangles,
+      shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
+      shape.positions, shape.normals, shape.texcoords, shape.colors,
+      shape.radius)) throw std::runtime_error("cannot save " + filename);
 }
 
 }  // namespace yocto
@@ -3070,10 +3061,10 @@ static void add_pbrt_shape(yocto_scene& scene, const string& type,
     compute_normals(shape.normals, shape.triangles, shape.positions);
   } else if (type == "plymesh") {
     shape.uri = get_pbrt_value(values, "filename", ""s);
-    load_shape(fs::path(filename).parent_path() / shape.uri, shape.points,
+    if(!load_shape(fs::path(filename).parent_path() / shape.uri, shape.points,
         shape.lines, shape.triangles, shape.quads, shape.quadspos,
         shape.quadsnorm, shape.quadstexcoord, shape.positions, shape.normals,
-        shape.texcoords, shape.colors, shape.radius, false);
+        shape.texcoords, shape.colors, shape.radius, false)) throw std::runtime_error("cannot load " + shape.uri);
   } else if (type == "sphere") {
     auto radius         = get_pbrt_value(values, "radius", 1.0f);
     auto params         = proc_shape_params{};
@@ -3902,10 +3893,10 @@ void save_pbrt_scene(const string& filename, const yocto_scene& scene,
     // save meshes
     auto dirname = fs::path(filename).parent_path();
     for (auto& shape : scene.shapes) {
-      save_shape((dirname / shape.uri).replace_extension(".ply"), shape.points,
+      if(!save_shape((dirname / shape.uri).replace_extension(".ply"), shape.points,
           shape.lines, shape.triangles, shape.quads, shape.quadspos,
           shape.quadsnorm, shape.quadstexcoord, shape.positions, shape.normals,
-          shape.texcoords, shape.colors, shape.radius);
+          shape.texcoords, shape.colors, shape.radius))  throw std::runtime_error("cannot save " + shape.uri);
     }
 
     // save textures

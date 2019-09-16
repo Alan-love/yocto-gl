@@ -581,14 +581,23 @@ void distance_to_color(vector<vec4f>& colors, const vector<float>& distances,
 // -----------------------------------------------------------------------------
 namespace yocto {
 
+// Result of file io operations.
+struct [[nodiscard]] shapeio_result {
+  bool   ok      = true;
+  string message = "";
+         operator bool() const { return ok; }
+};
+inline shapeio_result shapeio_ok() { return shapeio_result{}; }
+inline shapeio_result shapeio_error(const string& err) { return {false, err}; }
+
 // Load/Save a shape
-void load_shape(const string& filename, vector<int>& points,
+shapeio_result load_shape(const string& filename, vector<int>& points,
     vector<vec2i>& lines, vector<vec3i>& triangles, vector<vec4i>& quads,
     vector<vec4i>& quadspos, vector<vec4i>& quadsnorm,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, vector<vec4f>& colors,
     vector<float>& radius, bool facevarying);
-void save_shape(const string& filename, const vector<int>& points,
+shapeio_result save_shape(const string& filename, const vector<int>& points,
     const vector<vec2i>& lines, const vector<vec3i>& triangles,
     const vector<vec4i>& quads, const vector<vec4i>& quadspos,
     const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
