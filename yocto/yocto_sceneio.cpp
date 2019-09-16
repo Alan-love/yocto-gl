@@ -1529,14 +1529,6 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
 // Loads an OBJ
 static bool load_obj(const string& filename, yocto_scene& scene, string& error,
     const load_params& params) {
-  // errors
-  auto set_parse_error = [&]() {
-    return set_sceneio_error(error, filename, false, "parse error");
-  };
-  auto set_type_error = [&]() {
-    return set_sceneio_error(error, filename, false, "type mismatch");
-  };
-
   // current parsing values
   string mname = ""s;
   string oname = ""s;
@@ -1778,7 +1770,7 @@ static bool load_obj(const string& filename, yocto_scene& scene, string& error,
   }
 
   // check error
-  if(oerror) return set_parse_error();
+  if(oerror)     return set_sceneio_error(error, filename, false, "parse error");
 
   // check for extension
   auto extname = fs::path(filename).replace_extension(".objx");

@@ -477,7 +477,7 @@ template <typename T>
 inline T get_pbrt_value(
     const vector<pbrt_value>& pbrt, const string& name, T def) {
   auto value = T{};
-  get_pbrt_value(pbrt, name, value, def);
+  if(!get_pbrt_value(pbrt, name, value, def)) return def;
   return value;
 }
 
