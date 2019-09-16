@@ -434,8 +434,8 @@ enum struct pbrt_command_ {
 bool read_pbrt_command(file_wrapper& fs, pbrt_command_& command, string& name,
     string& type, frame3f& xform, vector<pbrt_value>& values, bool& error);
 bool read_pbrt_command(file_wrapper& fs, pbrt_command_& command, string& name,
-    string& type, frame3f& xform, vector<pbrt_value>& values, string& buffer, 
-    bool& error);
+    string& type, frame3f& xform, vector<pbrt_value>& values, bool& error, 
+    string& buffer);
 
 // Write pbrt commands
 void write_pbrt_comment(file_wrapper& fs, const string& comment);

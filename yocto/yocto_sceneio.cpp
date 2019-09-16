@@ -3884,7 +3884,7 @@ static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
   auto perror = false;
   while (!files.empty()) {
     if (!read_pbrt_command(
-            files.back(), command, name, type, xform, values, line, perror)) {
+            files.back(), command, name, type, xform, values, perror, line)) {
       files.pop_back();
       continue;
     }
