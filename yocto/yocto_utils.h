@@ -453,51 +453,63 @@ inline bool exists_file(const string& filename) {
 // -----------------------------------------------------------------------------
 namespace yocto {
 
+// Result of file io operations.
+struct [[nodiscard]] fileio_result {
+  bool ok = true;
+  string message = "";
+  operator bool() const { return ok; }
+};
+inline fileio_result fileio_ok() { return fileio_result{}; }
+inline fileio_result fileio_error(const string& err) { return {false, err}; }
+
 // Load a text file
-inline void load_text(const string& filename, string& str) {
+inline fileio_result load_text(const string& filename, string& str) {
   // https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c
   auto fs = fopen(filename.c_str(), "rt");
-  if (!fs) throw std::runtime_error("cannot open file " + filename);
+  if (!fs) return fileio_error("cannot open file " + filename);
   fseek(fs, 0, SEEK_END);
   auto length = ftell(fs);
   fseek(fs, 0, SEEK_SET);
   str.resize(length);
   if (fread(str.data(), 1, length, fs) != length) {
     fclose(fs);
-    throw std::runtime_error("cannot read file " + filename);
+    return fileio_error("cannot read file " + filename);
   }
   fclose(fs);
+  return fileio_ok();
 }
 
 // Save a text file
-inline void save_text(const string& filename, const string& str) {
+inline fileio_result save_text(const string& filename, const string& str) {
   auto fs = fopen(filename.c_str(), "wt");
-  if (!fs) throw std::runtime_error("cannot open file " + filename);
+  if (!fs) return fileio_error("cannot open file " + filename);
   if (fprintf(fs, "%s", str.c_str()) < 0) {
     fclose(fs);
-    throw std::runtime_error("cannot write file " + filename);
+    return fileio_error("cannot write file " + filename);
   }
   fclose(fs);
+  return fileio_ok();
 }
 
 // Load a binary file
-inline void load_binary(const string& filename, vector<byte>& data) {
+inline fileio_result load_binary(const string& filename, vector<byte>& data) {
   // https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c
   auto fs = fopen(filename.c_str(), "rb");
-  if (!fs) throw std::runtime_error("cannot open file " + filename);
+  if (!fs) return fileio_error("cannot open file " + filename);
   fseek(fs, 0, SEEK_END);
   auto length = ftell(fs);
   fseek(fs, 0, SEEK_SET);
   data.resize(length);
   if (fread(data.data(), 1, length, fs) != length) {
     fclose(fs);
-    throw std::runtime_error("cannot read file " + filename);
+    return fileio_error("cannot read file " + filename);
   }
   fclose(fs);
+  return fileio_ok();
 }
 
 // Save a binary file
-inline void save_binary(const string& filename, const vector<byte>& data) {
+inline fileio_result save_binary(const string& filename, const vector<byte>& data) {
   auto fs = fopen(filename.c_str(), "wb");
   if (!fs) throw std::runtime_error("cannot open file " + filename);
   if (fwrite(data.data(), 1, data.size(), fs) != data.size()) {
@@ -505,6 +517,7 @@ inline void save_binary(const string& filename, const vector<byte>& data) {
     throw std::runtime_error("cannot write file " + filename);
   }
   fclose(fs);
+  return fileio_ok();
 }
 
 }  // namespace yocto
