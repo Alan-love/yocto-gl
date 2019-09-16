@@ -674,10 +674,6 @@ namespace yocto {
 
 static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
     const load_params& params) {
-  // open file
-  auto fs = open_file(filename);
-  if (!fs) return set_sceneio_error(error, filename, false, "file not found");
-
   // errors
   auto set_parse_error = [&]() {
     return set_sceneio_error(error, filename, false, "parse error");
@@ -688,6 +684,10 @@ static bool load_yaml(const string& filename, yocto_scene& scene, string& error,
   auto set_type_error = [&]() {
     return set_sceneio_error(error, filename, false, "type mismatch");
   };
+
+  // open file
+  auto fs = open_file(filename);
+  if (!fs) return set_sceneio_error(error, filename, false, "file not found");
 
   // parse state
   enum struct parsing_type {
@@ -1362,9 +1362,6 @@ static bool load_objx(const string& filename, yocto_scene& scene, string& error,
   // errors
   auto set_parse_error = [&]() {
     return set_sceneio_error(error, filename, false, "parse error");
-  };
-  auto set_property_error = [&]() {
-    return set_sceneio_error(error, filename, false, "unknown property");
   };
   auto set_type_error = [&]() {
     return set_sceneio_error(error, filename, false, "type mismatch");
@@ -3861,6 +3858,17 @@ static void add_pbrt_light(yocto_scene& scene, const string& type,
 // load pbrt
 static bool load_pbrt(const string& filename, yocto_scene& scene, string& error,
     const load_params& params) {
+  // errors
+  auto set_parse_error = [&]() {
+    return set_sceneio_error(error, filename, false, "parse error");
+  };
+  auto set_property_error = [&]() {
+    return set_sceneio_error(error, filename, false, "unknown property");
+  };
+  auto set_type_error = [&]() {
+    return set_sceneio_error(error, filename, false, "type mismatch");
+  };
+
   auto files = vector<file_wrapper>{};
   if (!open_file(files.emplace_back(), filename))
     return set_sceneio_error(error, filename, false, "file not found");

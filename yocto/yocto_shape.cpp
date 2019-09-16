@@ -3079,6 +3079,11 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, vector<vec4f>& colors,
     vector<float>& radius, string& error, bool flip_texcoord) {
+  // errors
+  auto set_parse_error = [&]() {
+    return set_shapeio_error(error, filename, false, "parse error");
+  };
+
   // open ply
   auto fs = open_file(filename, "rb");
   if (!fs) return set_shapeio_error(error, filename, false, "file not found");
@@ -3087,7 +3092,7 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
   auto format   = ply_format{};
   auto elements = vector<ply_element>{};
   auto comments = vector<string>{};
-  read_ply_header(fs, format, elements, comments);
+  if(!read_ply_header(fs, format, elements, comments)) return set_parse_error();
 
   // read values
   auto values = vector<float>{};
@@ -3101,7 +3106,7 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
       auto col = find_ply_property(element, "red", "green", "blue", "alpha");
       auto rad = find_ply_property(element, "radius");
       for (auto idx = 0; idx < element.count; idx++) {
-        read_ply_value(fs, format, element, values, lists);
+        if(!read_ply_value(fs, format, element, values, lists)) return set_parse_error();
         if (pos.x >= 0)
           positions.push_back({values[pos.x], values[pos.y], values[pos.z]});
         if (norm.x >= 0)
@@ -3115,7 +3120,7 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
     } else if (element.name == "face") {
       auto indices = find_ply_property(element, "vertex_indices");
       for (auto idx = 0; idx < element.count; idx++) {
-        read_ply_value(fs, format, element, values, lists);
+        if(!read_ply_value(fs, format, element, values, lists)) return set_parse_error();
         if (indices < 0) continue;
         auto& face = lists[indices];
         if (face.size() == 4) {
@@ -3128,7 +3133,7 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
     } else if (element.name == "line") {
       auto indices = find_ply_property(element, "vertex_indices");
       for (auto idx = 0; idx < element.count; idx++) {
-        read_ply_value(fs, format, element, values, lists);
+        if(!read_ply_value(fs, format, element, values, lists)) return set_parse_error();
         if (indices < 0) continue;
         auto line = lists[indices];
         for (auto i = 1; i < line.size(); i++)
@@ -3136,7 +3141,7 @@ static bool load_ply_shape(const string& filename, vector<int>& points,
       }
     } else {
       for (auto idx = 0; idx < element.count; idx++)
-        read_ply_value(fs, format, element, values, lists);
+        if(!read_ply_value(fs, format, element, values, lists)) return set_parse_error();
     }
   }
 
@@ -3339,6 +3344,14 @@ static bool load_obj_shape(const string& filename, vector<int>& points,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, bool facevarying,
     string& error, bool flip_texcoord) {
+  // errors
+  auto set_parse_error = [&]() {
+    return set_shapeio_error(error, filename, false, "parse error");
+  };
+  auto set_type_error = [&]() {
+    return set_shapeio_error(error, filename, false, "type mismatch");
+  };
+
   // open obj
   auto fs = open_file(filename);
   if (!fs) return set_shapeio_error(error, filename, false, "file not found");
@@ -3361,13 +3374,14 @@ static bool load_obj_shape(const string& filename, vector<int>& points,
   auto value     = obj_value{};
   auto vertices  = vector<obj_vertex>{};
   auto vert_size = obj_vertex{};
-  while (read_obj_command(fs, element, value, vertices, vert_size)) {
+  auto oerror = false;
+  while (read_obj_command(fs, element, value, vertices, vert_size, oerror)) {
     if (element == obj_command::vertex) {
-      get_obj_value(value, opos.emplace_back());
+      if(!get_obj_value(value, opos.emplace_back())) return set_type_error();
     } else if (element == obj_command::normal) {
-      get_obj_value(value, onorm.emplace_back());
+      if(!get_obj_value(value, onorm.emplace_back())) return set_type_error();
     } else if (element == obj_command::texcoord) {
-      get_obj_value(value, otexcoord.emplace_back());
+      if(!get_obj_value(value, otexcoord.emplace_back())) return set_type_error();
     } else if (element == obj_command::face && facevarying) {
       for (auto& vert : vertices) {
         if (!vert.position) continue;
@@ -3482,6 +3496,9 @@ static bool load_obj_shape(const string& filename, vector<int>& points,
       // skip all other commands
     }
   }
+
+  // check error
+  if(oerror) return set_parse_error();
 
   if (positions.empty())
     return set_shapeio_error(
