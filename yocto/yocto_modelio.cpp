@@ -2365,9 +2365,9 @@ bool read_pbrt_command(file_wrapper& fs, pbrt_command& command, string& name,
 bool write_pbrt_comment(file_wrapper& fs, const string& comment) {
   auto lines = split_string(comment, "\n");
   for (auto& line : lines) {
-    if (fprintf(fs.fs, "# %s\n", line.c_str())) return false;
+    if (fprintf(fs.fs, "# %s\n", line.c_str())<0) return false;
   }
-  if (fprintf(fs.fs, "\n")) return false;
+  if (fprintf(fs.fs, "\n")<0) return false;
   return true;
 }
 
@@ -2392,7 +2392,7 @@ bool write_pbrt_values(file_wrapper& fs, const vector<pbrt_value>& values) {
       return false;
     switch (value.type) {
       case pbrt_value_type::real:
-        if (value.vector1f.empty()) {
+        if (!value.vector1f.empty()) {
           if (fprintf(fs.fs, "[ ") < 0) return false;
           for (auto& v : value.vector1f)
             if (fprintf(fs.fs, " %g", v) < 0) return false;
@@ -2402,7 +2402,7 @@ bool write_pbrt_values(file_wrapper& fs, const vector<pbrt_value>& values) {
         }
         break;
       case pbrt_value_type::integer:
-        if (value.vector1f.empty()) {
+        if (!value.vector1f.empty()) {
           if (fprintf(fs.fs, "[ ") < 0) return false;
           for (auto& v : value.vector1i)
             if (fprintf(fs.fs, " %d", v) < 0) return false;
@@ -2416,7 +2416,7 @@ bool write_pbrt_values(file_wrapper& fs, const vector<pbrt_value>& values) {
           return false;
         break;
       case pbrt_value_type::string:
-        if (fprintf(fs.fs, "\"%s\"", value.value1b ? "true" : "false") < 0)
+        if (fprintf(fs.fs, "\"%s\"", value.value1s.c_str()) < 0)
           return false;
         break;
       case pbrt_value_type::point:
@@ -2523,7 +2523,7 @@ bool write_pbrt_command(file_wrapper& fs, pbrt_command command,
       write_pbrt_values(fs, values);
       break;
     case pbrt_command::light:
-      if (fprintf(fs.fs, "Light \"%s\"", type.c_str()) < 0) return false;
+      if (fprintf(fs.fs, "LightSource \"%s\"", type.c_str()) < 0) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command::material:
@@ -2531,7 +2531,7 @@ bool write_pbrt_command(file_wrapper& fs, pbrt_command command,
       write_pbrt_values(fs, values);
       break;
     case pbrt_command::arealight:
-      if (fprintf(fs.fs, "AreaLight \"%s\"", type.c_str()) < 0) return false;
+      if (fprintf(fs.fs, "AreaLightSource \"%s\"", type.c_str()) < 0) return false;
       write_pbrt_values(fs, values);
       break;
     case pbrt_command::named_texture:
@@ -2805,7 +2805,7 @@ pbrt_value make_pbrt_value(
   auto pbrt    = pbrt_value{};
   pbrt.name    = name;
   pbrt.type    = type;
-  pbrt.value1b = value;
+  pbrt.value1i = value;
   return pbrt;
 }
 pbrt_value make_pbrt_value(
