@@ -52,7 +52,6 @@ namespace yocto {
 // using directives
 using std::unordered_map;
 using std::unordered_set;
-using namespace std::string_literals;
 
 }  // namespace yocto
 
@@ -586,8 +585,8 @@ void set_elementbuffer(
 }
 
 // initialize program
-bool init_program(ogl_program* program, const string& vertex,
-    const string& fragment, string& error, string& errorlog) {
+bool init_program(ogl_program* program, string_view vertex,
+    string_view fragment, string& error, string& errorlog) {
   // error
   auto program_error = [&error, &errorlog, program](
                            const char* message, const char* log) {
@@ -822,7 +821,7 @@ bool init_image(ogl_image* image) {
   auto texcoords = vector<vec2f>{{0, 0}, {0, 1}, {1, 1}, {1, 0}};
   auto triangles = vector<vec3i>{{0, 1, 2}, {0, 2, 3}};
 
-  auto error = ""s, errorlog = ""s;
+  auto error = string{}, errorlog = string{};
   if (!init_program(
           image->program, glimage_vertex, glimage_fragment, error, errorlog))
     return false;
@@ -1464,7 +1463,7 @@ ogl_scene::~ogl_scene() {
 // Initialize an OpenGL scene
 void init_scene(ogl_scene* scene) {
   if (is_initialized(scene->program)) return;
-  auto error = ""s, errorlog = ""s;
+  auto error = string{}, errorlog = string{};
   init_program(
       scene->program, glscene_vertex, glscene_fragment, error, errorlog);
 }

@@ -32,7 +32,6 @@
 #include <yocto/yocto_sceneio.h>
 #include <yocto/yocto_trace.h>
 using namespace yocto;
-using namespace std::string_literals;
 
 #include <OpenImageDenoise/oidn.hpp>
 #include <iostream>
@@ -127,10 +126,10 @@ bool oidn_image_denoise(const image<vec3f> &color, bool hdr,
 }
 
 int main(int argc, const char *argv[]) {
-  auto outname     = "out.png"s;
-  auto filename    = "img.hdr"s;
-  auto albedo_name = ""s;
-  auto normal_name = ""s;
+  auto outname     = string{"out.png"};
+  auto filename    = string{"img.hdr"};
+  auto albedo_name = string{};
+  auto normal_name = string{};
 
   // parse cli arguments and assure their correctness
   auto cli = make_cli(
@@ -147,7 +146,7 @@ int main(int argc, const char *argv[]) {
     print_fatal("normal feature image must be provided in pfm or exr format");
 
   // error string for yocto library functions
-  auto error = ""s;
+  auto error = string{};
 
   // load all the provided images
   auto         hdr = is_hdr_filename(filename);

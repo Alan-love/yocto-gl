@@ -38,7 +38,6 @@ using namespace yocto;
 #include <atomic>
 #include <deque>
 #include <future>
-using namespace std::string_literals;
 
 #ifdef _WIN32
 #undef near
@@ -225,7 +224,7 @@ int main(int argc, const char* argv[]) {
   // initialize app
   auto app_guard   = std::make_unique<app_state>();
   auto app         = app_guard.get();
-  auto camera_name = ""s;
+  auto camera_name = string{};
 
   // parse command line
   auto cli = make_cli("ysceneviews", "views scene inteactively");
@@ -238,7 +237,7 @@ int main(int argc, const char* argv[]) {
   parse_cli(cli, argc, argv);
 
   // loading scene
-  auto ioerror = ""s;
+  auto ioerror = string{};
   if (!load_scene(app->filename, app->ioscene, ioerror, print_progress))
     print_fatal(ioerror);
 
@@ -252,7 +251,7 @@ int main(int argc, const char* argv[]) {
   auto callbacks    = gui_callbacks{};
   callbacks.init_cb = [app](gui_window* win, const gui_input& input) {
     init_glscene(app->glscene, app->ioscene, app->glcamera, app->iocamera,
-        [app](const string& message, int current, int total) {
+        [app](string_view message, int current, int total) {
           app->status  = "init scene";
           app->current = current;
           app->total   = total;

@@ -29,6 +29,8 @@
 
 #include "yocto_imgui.h"
 
+#include <yocto/yocto_commonio.h>
+
 #include <algorithm>
 #include <cstdarg>
 #include <filesystem>
@@ -64,83 +66,6 @@ namespace yocto {
 using std::mutex;
 using std::unordered_map;
 using std::unordered_set;
-using namespace std::string_literals;
-
-}  // namespace yocto
-
-// -----------------------------------------------------------------------------
-// FILE UTILITIES
-// -----------------------------------------------------------------------------
-namespace yocto {
-
-// Make a path from a utf8 string
-inline std::filesystem::path make_path(const string& filename) {
-  return std::filesystem::u8path(filename);
-}
-
-// Normalize path
-inline string normalize_path(const string& filename) {
-  return make_path(filename).generic_u8string();
-}
-
-// Get directory name (not including /)
-inline string path_dirname(const string& filename) {
-  return make_path(filename).parent_path().generic_u8string();
-}
-
-// Get extension (including .)
-inline string path_extension(const string& filename) {
-  return make_path(filename).extension().u8string();
-}
-
-// Get filename without directory.
-inline string path_filename(const string& filename) {
-  return make_path(filename).filename().u8string();
-}
-
-// Get filename without directory and extension.
-inline string path_basename(const string& filename) {
-  return make_path(filename).stem().u8string();
-}
-
-// Joins paths
-inline string path_join(const string& patha, const string& pathb) {
-  return (make_path(patha) / make_path(pathb)).generic_u8string();
-}
-inline string path_join(
-    const string& patha, const string& pathb, const string& pathc) {
-  return (make_path(patha) / make_path(pathb) / make_path(pathc))
-      .generic_u8string();
-}
-
-// Replaces extensions
-inline string replace_extension(const string& filename, const string& ext) {
-  return make_path(filename).replace_extension(ext).u8string();
-}
-
-// Check if a file can be opened for reading.
-inline bool path_exists(const string& filename) {
-  return exists(make_path(filename));
-}
-
-// Check if a file is a directory
-inline bool path_isdir(const string& filename) {
-  return is_directory(make_path(filename));
-}
-
-// Check if a file is a file
-inline bool path_isfile(const string& filename) {
-  return is_regular_file(make_path(filename));
-}
-
-// List the contents of a directory
-inline vector<string> list_directory(const string& filename) {
-  auto entries = vector<string>{};
-  for (auto entry : std::filesystem::directory_iterator(make_path(filename))) {
-    entries.push_back(entry.path().generic_u8string());
-  }
-  return entries;
-}
 
 }  // namespace yocto
 
@@ -150,7 +75,7 @@ inline vector<string> list_directory(const string& filename) {
 namespace yocto {
 
 // run the user interface with the give callbacks
-void run_ui(const vec2i& size, const string& title,
+void run_ui(const vec2i& size, string_view title,
     const gui_callbacks& callbacks, int widgets_width, bool widgets_left) {
   auto win_guard = std::make_unique<gui_window>();
   auto win       = win_guard.get();
@@ -216,7 +141,7 @@ static void draw_window(gui_window* win) {
   glfwSwapBuffers(win->win);
 }
 
-void init_window(gui_window* win, const vec2i& size, const string& title,
+void init_window(gui_window* win, const vec2i& size, string_view title,
     bool widgets, int widgets_width, bool widgets_left) {
   // init glfw
   if (!glfwInit())
@@ -230,7 +155,8 @@ void init_window(gui_window* win, const vec2i& size, const string& title,
 
   // create window
   win->title = title;
-  win->win = glfwCreateWindow(size.x, size.y, title.c_str(), nullptr, nullptr);
+  win->win   = glfwCreateWindow(
+      size.x, size.y, string{title}.c_str(), nullptr, nullptr);
   if (!win->win) throw std::runtime_error("cannot initialize windowing system");
   glfwMakeContextCurrent(win->win);
   glfwSwapInterval(1);  // Enable vsync
@@ -476,12 +402,12 @@ struct filedialog_state {
   vector<string>             extensions    = {};
 
   filedialog_state() {}
-  filedialog_state(const string& dirname, const string& filename,
-      const string& filter, bool save) {
+  filedialog_state(string_view dirname, string_view filename,
+      string_view filter, bool save) {
     set(dirname, filename, filter, save);
   }
 
-  void set(const string& dirname, const string& filename, const string& filter,
+  void set(string_view dirname, string_view filename, string_view filter,
       bool save) {
     this->save = save;
     _set_filter(filter);
@@ -489,7 +415,7 @@ struct filedialog_state {
     _set_filename(filename);
   }
 
-  void _set_dirname(const string& name) {
+  void _set_dirname(string_view name) {
     if (path_exists(name) && path_isdir(name)) {
       dirname = name;
     } else if (path_exists(dirname) && path_isdir(dirname)) {
@@ -513,7 +439,7 @@ struct filedialog_state {
     });
   }
 
-  void _set_filename(const string& name) {
+  void _set_filename(string_view name) {
     filename = name;
     if (filename.empty()) return;
     auto ext = path_extension(filename);
@@ -528,7 +454,7 @@ struct filedialog_state {
     }
   }
 
-  void _set_filter(const string& flt) {
+  void _set_filter(string_view flt) {
     auto globs = vector<string>{""};
     for (auto i = 0; i < flt.size(); i++) {
       if (flt[i] == ';') {
@@ -561,7 +487,7 @@ struct filedialog_state {
 };
 
 bool draw_filedialog(gui_window* win, const char* lbl, string& path, bool save,
-    const string& dirname, const string& filename, const string& filter) {
+    string_view dirname, string_view filename, string_view filter) {
   static auto states = unordered_map<string, filedialog_state>{};
   ImGui::SetNextWindowSize({500, 300}, ImGuiCond_FirstUseEver);
   if (ImGui::BeginPopupModal(lbl)) {
@@ -618,7 +544,7 @@ bool draw_filedialog(gui_window* win, const char* lbl, string& path, bool save,
 
 bool draw_filedialog_button(gui_window* win, const char* button_lbl,
     bool button_active, const char* lbl, string& path, bool save,
-    const string& dirname, const string& filename, const string& filter) {
+    string_view dirname, string_view filename, string_view filter) {
   if (is_glmodal_open(win, lbl)) {
     draw_button(win, button_lbl, button_active);
     return draw_filedialog(win, lbl, path, save, dirname, filename, filter);
@@ -643,8 +569,8 @@ bool draw_button(gui_window* win, const char* lbl, bool enabled) {
   }
 }
 
-void draw_label(gui_window* win, const char* lbl, const string& label) {
-  ImGui::LabelText(lbl, "%s", label.c_str());
+void draw_label(gui_window* win, const char* lbl, string_view label) {
+  ImGui::LabelText(lbl, "%s", string{label}.c_str());
 }
 
 void draw_separator(gui_window* win) { ImGui::Separator(); }
@@ -762,8 +688,9 @@ bool draw_hdrcoloredit(gui_window* win, const char* lbl, vec3f& value) {
     exposure = log2(scale);
   }
   auto edit_exposure = draw_slider(
-      win, (lbl + " [exp]"s).c_str(), exposure, 0, 10);
-  auto edit_color = draw_coloredit(win, (lbl + " [col]"s).c_str(), color);
+      win, (lbl + string{" [exp]"}).c_str(), exposure, 0, 10);
+  auto edit_color = draw_coloredit(
+      win, (lbl + string{" [col]"}).c_str(), color);
   if (edit_exposure || edit_color) {
     value = color * exp2(exposure);
     return true;
@@ -782,8 +709,9 @@ bool draw_hdrcoloredit(gui_window* win, const char* lbl, vec4f& value) {
     exposure = log2(scale);
   }
   auto edit_exposure = draw_slider(
-      win, (lbl + " [exp]"s).c_str(), exposure, 0, 10);
-  auto edit_color = draw_coloredit(win, (lbl + " [col]"s).c_str(), color);
+      win, (lbl + string{" [exp]"}).c_str(), exposure, 0, 10);
+  auto edit_color = draw_coloredit(
+      win, (lbl + string{" [col]"}).c_str(), color);
   if (edit_exposure || edit_color) {
     value.x = color.x * exp2(exposure);
     value.y = color.y * exp2(exposure);
@@ -876,30 +804,39 @@ void draw_histogram(
 }
 void draw_histogram(
     gui_window* win, const char* lbl, const vector<vec2f>& values) {
-  ImGui::PlotHistogram((lbl + " x"s).c_str(), (const float*)values.data() + 0,
-      (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec2f));
-  ImGui::PlotHistogram((lbl + " y"s).c_str(), (const float*)values.data() + 1,
-      (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec2f));
+  ImGui::PlotHistogram((lbl + string{" x"}).c_str(),
+      (const float*)values.data() + 0, (int)values.size(), 0, nullptr, flt_max,
+      flt_max, {0, 0}, sizeof(vec2f));
+  ImGui::PlotHistogram((lbl + string{" y"}).c_str(),
+      (const float*)values.data() + 1, (int)values.size(), 0, nullptr, flt_max,
+      flt_max, {0, 0}, sizeof(vec2f));
 }
 void draw_histogram(
     gui_window* win, const char* lbl, const vector<vec3f>& values) {
-  ImGui::PlotHistogram((lbl + " x"s).c_str(), (const float*)values.data() + 0,
-      (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec3f));
-  ImGui::PlotHistogram((lbl + " y"s).c_str(), (const float*)values.data() + 1,
-      (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec3f));
-  ImGui::PlotHistogram((lbl + " z"s).c_str(), (const float*)values.data() + 2,
-      (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec3f));
+  ImGui::PlotHistogram((lbl + string{" x"}).c_str(),
+      (const float*)values.data() + 0, (int)values.size(), 0, nullptr, flt_max,
+      flt_max, {0, 0}, sizeof(vec3f));
+  ImGui::PlotHistogram((lbl + string{" y"}).c_str(),
+      (const float*)values.data() + 1, (int)values.size(), 0, nullptr, flt_max,
+      flt_max, {0, 0}, sizeof(vec3f));
+  ImGui::PlotHistogram((lbl + string{" z"}).c_str(),
+      (const float*)values.data() + 2, (int)values.size(), 0, nullptr, flt_max,
+      flt_max, {0, 0}, sizeof(vec3f));
 }
 void draw_histogram(
     gui_window* win, const char* lbl, const vector<vec4f>& values) {
-  ImGui::PlotHistogram((lbl + " x"s).c_str(), (const float*)values.data() + 0,
-      (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec4f));
-  ImGui::PlotHistogram((lbl + " y"s).c_str(), (const float*)values.data() + 1,
-      (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec4f));
-  ImGui::PlotHistogram((lbl + " z"s).c_str(), (const float*)values.data() + 2,
-      (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec4f));
-  ImGui::PlotHistogram((lbl + " w"s).c_str(), (const float*)values.data() + 3,
-      (int)values.size(), 0, nullptr, flt_max, flt_max, {0, 0}, sizeof(vec4f));
+  ImGui::PlotHistogram((lbl + string{" x"}).c_str(),
+      (const float*)values.data() + 0, (int)values.size(), 0, nullptr, flt_max,
+      flt_max, {0, 0}, sizeof(vec4f));
+  ImGui::PlotHistogram((lbl + string{" y"}).c_str(),
+      (const float*)values.data() + 1, (int)values.size(), 0, nullptr, flt_max,
+      flt_max, {0, 0}, sizeof(vec4f));
+  ImGui::PlotHistogram((lbl + string{" z"}).c_str(),
+      (const float*)values.data() + 2, (int)values.size(), 0, nullptr, flt_max,
+      flt_max, {0, 0}, sizeof(vec4f));
+  ImGui::PlotHistogram((lbl + string{" w"}).c_str(),
+      (const float*)values.data() + 3, (int)values.size(), 0, nullptr, flt_max,
+      flt_max, {0, 0}, sizeof(vec4f));
 }
 
 // https://github.com/ocornut/imgui/issues/300
@@ -963,14 +900,14 @@ struct ImGuiAppLog {
 
 std::mutex  _log_mutex;
 ImGuiAppLog _log_widget;
-void        log_info(gui_window* win, const string& msg) {
+void        log_info(gui_window* win, string_view msg) {
   _log_mutex.lock();
-  _log_widget.AddLog(msg.c_str(), "info");
+  _log_widget.AddLog(string{msg}.c_str(), "info");
   _log_mutex.unlock();
 }
-void log_error(gui_window* win, const string& msg) {
+void log_error(gui_window* win, string_view msg) {
   _log_mutex.lock();
-  _log_widget.AddLog(msg.c_str(), "errn");
+  _log_widget.AddLog(string{msg}.c_str(), "errn");
   _log_mutex.unlock();
 }
 void clear_log(gui_window* win) {

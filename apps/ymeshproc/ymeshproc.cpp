@@ -35,7 +35,7 @@ using namespace yocto;
 // Shape presets used ofr testing.
 bool make_mesh_preset(vector<vec3i>& triangles, vector<vec3f>& positions,
     vector<vec3f>& normals, vector<vec2f>& texcoords, vector<vec3f>& colors,
-    const string& type, string& error) {
+    string_view type, string& error) {
   auto set_quads = [&](quads_shape&& shape) {
     triangles = quads_to_triangles(shape.quads);
     positions = shape.positions;
@@ -123,8 +123,8 @@ int main(int argc, const char* argv[]) {
   auto num_geodesic_samples = 0;
   auto geodesic_scale       = 30.0f;
   auto slice                = false;
-  auto output               = "out.ply"s;
-  auto filename             = "mesh.ply"s;
+  auto output               = string{"out.ply"};
+  auto filename             = string{"mesh.ply"};
 
   // parse command line
   auto cli = make_cli("ymshproc", "Applies operations on a triangle mesh");
@@ -162,7 +162,7 @@ int main(int argc, const char* argv[]) {
   auto lines     = vector<vec2i>{};  // for line output
 
   // load mesh
-  auto ioerror = ""s;
+  auto ioerror = string{};
   print_progress("load mesh", 0, 1);
   if (path_extension(filename) == ".ypreset") {
     if (!make_mesh_preset(triangles, positions, normals, texcoords, colors,

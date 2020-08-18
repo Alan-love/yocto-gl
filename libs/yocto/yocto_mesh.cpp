@@ -12,6 +12,7 @@
 
 #include "yocto_mesh.h"
 
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <deque>
@@ -21,6 +22,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "yocto_commonio.h"
 #include "yocto_geometry.h"
 #include "yocto_modelio.h"
 
@@ -34,7 +36,6 @@ using std::atomic;
 using std::deque;
 using std::pair;
 using std::unordered_set;
-using namespace std::string_literals;
 
 }  // namespace yocto
 
@@ -630,7 +631,8 @@ geodesic_solver make_geodesic_solver(const vector<vec3i>& triangles,
       solver.graph[i].push_back({p, length(e)});
       auto opp   = opposite_face(triangles, adjacencies, tid, i);
       auto strip = vector<int>{tid, opp};
-      auto k = find_in_vec(adjacencies[tid], opp);  // TODO: this is not needeed
+      auto k     = find_in_vec(
+          adjacencies[tid], opp);  // TODO(fabio): this is not needeed
       assert(k != -1);
       auto a       = opposite_vertex(triangles, adjacencies, tid, k);
       offset       = find_in_vec(triangles[opp], a);
@@ -868,7 +870,7 @@ vector<vector<float>> compute_voronoi_fields(
     fields[i]                = vector<float>(solver.graph.size(), flt_max);
     fields[i][generators[i]] = 0;
     fields[i] = compute_geodesic_distances(solver, {generators[i]}, max);
-  };
+  }
   return fields;
 }
 
@@ -1425,9 +1427,9 @@ int set_target_parent(const vector<pair<int, float>>& nbr,
     const vector<int>& parents, const vector<float>& f) {
   auto vid    = -1;
   auto lambda = flt_max;
-  if (nbr.size() == 1)
+  if (nbr.size() == 1) {
     vid = parents[nbr[0].first];
-  else {
+  } else {
     for (auto i = 0; i < nbr.size(); ++i) {
       auto val = f[nbr[i].first] + nbr[i].second;
       if (val < lambda) {
@@ -1965,7 +1967,7 @@ static vector<int> short_strip(const geodesic_solver& solver,
 
 // returns a strip of triangles such target belongs to the first one and
 // source to the last one
-//(TO DO:may be the names could change in order to get the call
+// TODO(fabio): may be the names could change in order to get the call
 // more consistent with the output)
 vector<int> get_strip(const geodesic_solver& solver,
     const vector<vec3i>& triangles, const vector<vec3f>& positions,
@@ -2512,26 +2514,16 @@ mesh_point eval_path_point(const geodesic_path& path,
 // -----------------------------------------------------------------------------
 namespace yocto {
 
-// Make a path from a utf8 string
-inline std::filesystem::path make_path(const string& filename) {
-  return std::filesystem::u8path(filename);
-}
-
-// Get extension (including .)
-inline string path_extension(const string& filename) {
-  return make_path(filename).extension().u8string();
-}
-
 // Load ply mesh
-[[nodiscard]] bool load_mesh(const string& filename, vector<vec3i>& triangles,
+[[nodiscard]] bool load_mesh(string_view filename, vector<vec3i>& triangles,
     vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>& texcoords,
     vector<vec3f>& colors, string& error, bool flip_texcoord) {
   auto format_error = [filename, &error]() {
-    error = filename + ": unknown format";
+    error = format_file_error(filename, "unknown format");
     return false;
   };
   auto shape_error = [filename, &error]() {
-    error = filename + ": empty shape";
+    error = format_file_error(filename, "empty shape");
     return false;
   };
 
@@ -2590,17 +2582,17 @@ inline string path_extension(const string& filename) {
 }
 
 // Save ply mesh
-[[nodiscard]] bool save_mesh(const string& filename,
+[[nodiscard]] bool save_mesh(string_view filename,
     const vector<vec3i>& triangles, const vector<vec3f>& positions,
     const vector<vec3f>& normals, const vector<vec2f>& texcoords,
     const vector<vec3f>& colors, string& error, bool ascii,
     bool flip_texcoord) {
   auto format_error = [filename, &error]() {
-    error = filename + ": unknown format";
+    error = format_file_error(filename, "unknown format");
     return false;
   };
   auto shape_error = [filename, &error]() {
-    error = filename + ": empty shape";
+    error = format_file_error(filename, "empty shape");
     return false;
   };
 
@@ -2626,7 +2618,7 @@ inline string path_extension(const string& filename) {
     } else {
       return shape_error();
     }
-    auto err = ""s;
+    auto err = string{};
     if (!save_obj(filename, obj, error)) return false;
     return true;
   } else {
@@ -2635,15 +2627,15 @@ inline string path_extension(const string& filename) {
 }
 
 // Load ply mesh
-[[nodiscard]] bool load_lines(const string& filename, vector<vec2i>& lines,
+[[nodiscard]] bool load_lines(string_view filename, vector<vec2i>& lines,
     vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>& texcoords,
     vector<vec3f>& colors, string& error, bool flip_texcoord) {
   auto format_error = [filename, &error]() {
-    error = filename + ": unknown format";
+    error = format_file_error(filename, "unknown format");
     return false;
   };
   auto shape_error = [filename, &error]() {
-    error = filename + ": empty shape";
+    error = format_file_error(filename, "empty shape");
     return false;
   };
 
@@ -2702,17 +2694,16 @@ inline string path_extension(const string& filename) {
 }
 
 // Save ply mesh
-[[nodiscard]] bool save_lines(const string& filename,
-    const vector<vec2i>& lines, const vector<vec3f>& positions,
-    const vector<vec3f>& normals, const vector<vec2f>& texcoords,
-    const vector<vec3f>& colors, string& error, bool ascii,
-    bool flip_texcoord) {
+[[nodiscard]] bool save_lines(string_view filename, const vector<vec2i>& lines,
+    const vector<vec3f>& positions, const vector<vec3f>& normals,
+    const vector<vec2f>& texcoords, const vector<vec3f>& colors, string& error,
+    bool ascii, bool flip_texcoord) {
   auto format_error = [filename, &error]() {
-    error = filename + ": unknown format";
+    error = format_file_error(filename, "unknown format");
     return false;
   };
   auto shape_error = [filename, &error]() {
-    error = filename + ": empty shape";
+    error = format_file_error(filename, "empty shape");
     return false;
   };
 
@@ -2738,7 +2729,7 @@ inline string path_extension(const string& filename) {
     } else {
       return shape_error();
     }
-    auto err = ""s;
+    auto err = string{};
     if (!save_obj(filename, obj, error)) return false;
     return true;
   } else {

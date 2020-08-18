@@ -44,6 +44,7 @@
 
 #include "ext/cgltf.h"
 #include "ext/json.hpp"
+#include "yocto_commonio.h"
 #include "yocto_image.h"
 #include "yocto_modelio.h"
 #include "yocto_shape.h"
@@ -57,49 +58,6 @@ namespace yocto {
 using std::atomic;
 using std::deque;
 using std::unique_ptr;
-using namespace std::string_literals;
-
-}  // namespace yocto
-
-// -----------------------------------------------------------------------------
-// UTILITIES
-// -----------------------------------------------------------------------------
-namespace yocto {
-
-// Make a path from a utf8 string
-inline std::filesystem::path make_path(const string& filename) {
-  return std::filesystem::u8path(filename);
-}
-
-// Get directory name (not including /)
-inline string path_dirname(const string& filename) {
-  return make_path(filename).parent_path().generic_u8string();
-}
-
-// Get filename without directory and extension.
-inline string path_basename(const string& filename) {
-  return make_path(filename).stem().u8string();
-}
-
-// Get extension (including .)
-inline string path_extension(const string& filename) {
-  return make_path(filename).extension().u8string();
-}
-
-// Joins paths
-inline string path_join(const string& patha, const string& pathb) {
-  return (make_path(patha) / make_path(pathb)).generic_u8string();
-}
-inline string path_join(
-    const string& patha, const string& pathb, const string& pathc) {
-  return (make_path(patha) / make_path(pathb) / make_path(pathc))
-      .generic_u8string();
-}
-
-// Check if a file can be opened for reading.
-inline bool path_exists(const string& filename) {
-  return exists(make_path(filename));
-}
 
 }  // namespace yocto
 
@@ -109,37 +67,37 @@ inline bool path_exists(const string& filename) {
 namespace yocto {
 
 // Load/save a scene in the builtin JSON format.
-static bool load_json_scene(const string& filename, scene_model* scene,
+static bool load_json_scene(string_view filename, scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel);
-static bool save_json_scene(const string& filename, const scene_model* scene,
+static bool save_json_scene(string_view filename, const scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel);
 
 // Load/save a scene from/to OBJ.
-static bool load_obj_scene(const string& filename, scene_model* scene,
+static bool load_obj_scene(string_view filename, scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel);
-static bool save_obj_scene(const string& filename, const scene_model* scene,
+static bool save_obj_scene(string_view filename, const scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel);
 
 // Load/save a scene from/to PLY. Loads/saves only one mesh with no other data.
-static bool load_ply_scene(const string& filename, scene_model* scene,
+static bool load_ply_scene(string_view filename, scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel);
-static bool save_ply_scene(const string& filename, const scene_model* scene,
+static bool save_ply_scene(string_view filename, const scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel);
 
 // Load/save a scene from/to glTF.
-static bool load_gltf_scene(const string& filename, scene_model* scene,
+static bool load_gltf_scene(string_view filename, scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel);
 
 // Load/save a scene from/to pbrt-> This is not robust at all and only
 // works on scene that have been previously adapted since the two renderers
 // are too different to match.
-static bool load_pbrt_scene(const string& filename, scene_model* scene,
+static bool load_pbrt_scene(string_view filename, scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel);
-static bool save_pbrt_scene(const string& filename, const scene_model* scene,
+static bool save_pbrt_scene(string_view filename, const scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel);
 
 // Load a scene
-bool load_scene(const string& filename, scene_model* scene, string& error,
+bool load_scene(string_view filename, scene_model* scene, string& error,
     progress_callback progress_cb, bool noparallel) {
   auto ext = path_extension(filename);
   if (ext == ".json" || ext == ".JSON") {
@@ -153,12 +111,12 @@ bool load_scene(const string& filename, scene_model* scene, string& error,
   } else if (ext == ".ply" || ext == ".PLY") {
     return load_ply_scene(filename, scene, error, progress_cb, noparallel);
   } else {
-    throw std::runtime_error{filename + ": unknown format"};
+    throw std::runtime_error{format_file_error(filename, "unknown format")};
   }
 }
 
 // Save a scene
-bool save_scene(const string& filename, const scene_model* scene, string& error,
+bool save_scene(string_view filename, const scene_model* scene, string& error,
     progress_callback progress_cb, bool noparallel) {
   auto ext = path_extension(filename);
   if (ext == ".json" || ext == ".JSON") {
@@ -170,7 +128,7 @@ bool save_scene(const string& filename, const scene_model* scene, string& error,
   } else if (ext == ".ply" || ext == ".PLY") {
     return save_ply_scene(filename, scene, error, progress_cb, noparallel);
   } else {
-    throw std::runtime_error{filename + ": unknown format"};
+    throw std::runtime_error{format_file_error(filename, "unknown format")};
   }
 }
 
@@ -182,7 +140,7 @@ bool save_scene(const string& filename, const scene_model* scene, string& error,
 namespace yocto {
 
 // Loads/saves a  channel float/byte image in linear/srgb color space.
-static bool load_image(const string& filename, image<vec4f>& colorf,
+static bool load_image(string_view filename, image<vec4f>& colorf,
     image<vec4b>& colorb, string& error) {
   if (is_hdr_filename(filename)) {
     return load_image(filename, colorf, error);
@@ -192,7 +150,7 @@ static bool load_image(const string& filename, image<vec4f>& colorf,
 }
 
 // Loads/saves a 3 channel float/byte image in linear/srgb color space.
-static bool load_image(const string& filename, image<vec3f>& colorf,
+static bool load_image(string_view filename, image<vec3f>& colorf,
     image<vec3b>& colorb, string& error) {
   if (is_hdr_filename(filename)) {
     return load_image(filename, colorf, error);
@@ -200,7 +158,7 @@ static bool load_image(const string& filename, image<vec3f>& colorf,
     return load_image(filename, colorb, error);
   }
 }
-static bool save_image(const string& filename, const image<vec3f>& colorf,
+static bool save_image(string_view filename, const image<vec3f>& colorf,
     const image<vec3b>& colorb, string& error) {
   if (is_hdr_filename(filename)) {
     return save_image(filename, colorf, error);
@@ -210,7 +168,7 @@ static bool save_image(const string& filename, const image<vec3f>& colorf,
 }
 
 // Loads/saves a 1 channel float/byte image in linear/srgb color space.
-static bool load_image(const string& filename, image<float>& scalarf,
+static bool load_image(string_view filename, image<float>& scalarf,
     image<byte>& scalarb, string& error) {
   if (is_hdr_filename(filename)) {
     return load_image(filename, scalarf, error);
@@ -218,7 +176,7 @@ static bool load_image(const string& filename, image<float>& scalarf,
     return load_image(filename, scalarb, error);
   }
 }
-static bool save_image(const string& filename, const image<float>& scalarf,
+static bool save_image(string_view filename, const image<float>& scalarf,
     const image<byte>& scalarb, string& error) {
   if (is_hdr_filename(filename)) {
     return save_image(filename, scalarf, error);
@@ -229,9 +187,9 @@ static bool save_image(const string& filename, const image<float>& scalarf,
 
 // load instances
 static bool load_instance(
-    const string& filename, vector<frame3f>& frames, string& error) {
+    string_view filename, vector<frame3f>& frames, string& error) {
   auto format_error = [filename, &error]() {
-    error = filename + ": unknown format";
+    error = format_file_error(filename, "unknown format");
     return false;
   };
   auto ext = path_extension(filename);
@@ -250,10 +208,10 @@ static bool load_instance(
 
 // save instances
 // static
-bool save_instance(const string& filename, const vector<frame3f>& frames,
+bool save_instance(string_view filename, const vector<frame3f>& frames,
     string& error, bool ascii = false) {
   auto format_error = [filename, &error]() {
-    error = filename + ": unknown format";
+    error = format_file_error(filename, "unknown format");
     return false;
   };
   auto ext = path_extension(filename);
@@ -307,69 +265,14 @@ namespace yocto {
 
 using json = nlohmann::json;
 
-// Opens a file with a utf8 file name
-static FILE* fopen_utf8(const char* filename, const char* mode) {
-#ifdef _Win32
-  auto path8 = std::filesystem::u8path(filename);
-  auto wmode = std::wstring(string{mode}.begin(), string{mode}.end());
-  return _wfopen(path.c_str(), wmode.c_str());
-#else
-  return fopen(filename, mode);
-#endif
-}
-
-// Load a text file
-static bool load_text(const string& filename, string& str, string& error) {
-  // error helpers
-  auto open_error = [filename, &error]() {
-    error = filename + ": file not found";
-    return false;
-  };
-  auto read_error = [filename, &error]() {
-    error = filename + ": read error";
-    return false;
-  };
-
-  // https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c
-  auto fs = fopen_utf8(filename.c_str(), "rb");
-  if (!fs) return open_error();
-  auto fs_guard = std::unique_ptr<FILE, decltype(&fclose)>{fs, fclose};
-  fseek(fs, 0, SEEK_END);
-  auto length = ftell(fs);
-  fseek(fs, 0, SEEK_SET);
-  str.resize(length);
-  if (fread(str.data(), 1, length, fs) != length) return read_error();
-  return true;
-}
-
-// Save a text file
-static bool save_text(
-    const string& filename, const string& str, string& error) {
-  // error helpers
-  auto open_error = [filename, &error]() {
-    error = filename + ": file not found";
-    return false;
-  };
-  auto write_error = [filename, &error]() {
-    error = filename + ": write error";
-    return false;
-  };
-
-  auto fs = fopen_utf8(filename.c_str(), "wt");
-  if (!fs) return open_error();
-  auto fs_guard = std::unique_ptr<FILE, decltype(&fclose)>{fs, fclose};
-  if (fprintf(fs, "%s", str.c_str()) < 0) return write_error();
-  return true;
-}
-
 // load/save json
-static bool load_json(const string& filename, json& js, string& error) {
+static bool load_json(string_view filename, json& js, string& error) {
   // error helpers
   auto parse_error = [filename, &error]() {
-    error = filename + ": parse error in json";
+    error = format_file_error(filename, "parse error in json");
     return false;
   };
-  auto text = ""s;
+  auto text = string{};
   if (!load_text(filename, text, error)) return false;
   try {
     js = json::parse(text);
@@ -379,23 +282,19 @@ static bool load_json(const string& filename, json& js, string& error) {
   }
 }
 
-static bool save_json(const string& filename, const json& js, string& error) {
+static bool save_json(string_view filename, const json& js, string& error) {
   return save_text(filename, js.dump(2), error);
 }
 
 // Save a scene in the builtin JSON format.
-static bool load_json_scene(const string& filename, scene_model* scene,
+static bool load_json_scene(string_view filename, scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel) {
-  auto parse_error = [filename, &error]() {
-    error = filename + ": parse error";
-    return false;
-  };
-  auto material_error = [filename, &error](const string& name) {
-    error = filename + ": missing material " + name;
+  auto material_error = [filename, &error](string_view name) {
+    error = format_file_error(filename, ": missing material " + string{name});
     return false;
   };
   auto dependent_error = [filename, &error]() {
-    error = filename + ": error in " + error;
+    error = format_file_error(filename, ": error in " + error);
     return false;
   };
 
@@ -408,11 +307,10 @@ static bool load_json_scene(const string& filename, scene_model* scene,
   if (!load_json(filename, js, error)) return false;
 
   // gets a json value
-  auto get_value = [](const json& ejs, const string& name,
-                       auto& value) -> bool {
+  auto get_value = [](const json& ejs, string_view name, auto& value) -> bool {
     if (!ejs.contains(name)) return true;
     try {
-      ejs.at(name).get_to(value);
+      ejs.at(string{name}).get_to(value);
       return true;
     } catch (...) {
       return false;
@@ -421,10 +319,9 @@ static bool load_json_scene(const string& filename, scene_model* scene,
 
   // parse json reference
   auto get_ref = [&material_error, &get_value](const json& ejs,
-                     const string& name, auto& value,
-                     const auto& refs) -> bool {
+                     string_view name, auto& value, const auto& refs) -> bool {
     if (!ejs.contains(name)) return true;
-    auto ref = ""s;
+    auto ref = string{};
     if (!get_value(ejs, name, ref)) return false;
     if (ref == "") {
       value = nullptr;
@@ -438,10 +335,10 @@ static bool load_json_scene(const string& filename, scene_model* scene,
   // parse json reference
   auto ctexture_map = unordered_map<string, scene_texture*>{{"", nullptr}};
   auto get_ctexture = [scene, &ctexture_map, &get_value](const json& ejs,
-                          const string& name, scene_texture*& value,
-                          const string& dirname = "textures/") -> bool {
+                          string_view name, scene_texture*& value,
+                          string_view dirname = "textures/") -> bool {
     if (!ejs.contains(name)) return true;
-    auto path = ""s;
+    auto path = string{};
     if (!get_value(ejs, name, path)) return false;
     if (path == "") return true;
     auto it = ctexture_map.find(path);
@@ -458,10 +355,10 @@ static bool load_json_scene(const string& filename, scene_model* scene,
   // parse json reference
   auto stexture_map = unordered_map<string, scene_texture*>{{"", nullptr}};
   auto get_stexture = [scene, &stexture_map, &get_value](const json& ejs,
-                          const string& name, scene_texture*& value,
-                          const string& dirname = "textures/") -> bool {
+                          string_view name, scene_texture*& value,
+                          string_view dirname = "textures/") -> bool {
     if (!ejs.contains(name)) return true;
-    auto path = ""s;
+    auto path = string{};
     if (!get_value(ejs, name, path)) return false;
     if (path == "") return true;
     auto it = stexture_map.find(path);
@@ -478,10 +375,10 @@ static bool load_json_scene(const string& filename, scene_model* scene,
   // parse json reference
   auto shape_map = unordered_map<string, scene_shape*>{{"", nullptr}};
   auto get_shape = [scene, &shape_map, &get_value](const json& ejs,
-                       const string& name, scene_shape*& value,
-                       const string& dirname = "shapes/") -> bool {
+                       string_view name, scene_shape*& value,
+                       string_view dirname = "shapes/") -> bool {
     if (!ejs.contains(name)) return true;
-    auto path = ""s;
+    auto path = string{};
     if (!get_value(ejs, name, path)) return false;
     if (path == "") return true;
     auto it = shape_map.find(path);
@@ -504,11 +401,11 @@ static bool load_json_scene(const string& filename, scene_model* scene,
   auto ply_instance_map  = unordered_map<string, ply_instance*>{{"", nullptr}};
   auto instance_ply      = unordered_map<scene_instance*, ply_instance*>{};
   auto get_ply_instances = [&ply_instances, &ply_instance_map, &instance_ply,
-                               &get_value](const json& ejs, const string& name,
+                               &get_value](const json& ejs, string_view name,
                                scene_instance* instance,
-                               const string&   dirname = "instances/") -> bool {
+                               string_view     dirname = "instances/") -> bool {
     if (!ejs.contains(name)) return true;
-    auto path = ""s;
+    auto path = string{};
     if (!get_value(ejs, name, path)) return false;
     if (path == "") return true;
     auto it = ply_instance_map.find(path);
@@ -673,14 +570,15 @@ static bool load_json_scene(const string& filename, scene_model* scene,
   progress.y += ply_instances.size();
 
   // get filename from name
-  auto make_filename = [filename](const string& name, const string& group,
+  auto make_filename = [filename](string_view name, string_view group,
                            const vector<string>& extensions) {
     for (auto& extension : extensions) {
       auto filepath = path_join(
-          path_dirname(filename), group, name + extension);
+          path_dirname(filename), group, string{name} + extension);
       if (path_exists(filepath)) return filepath;
     }
-    return path_join(path_dirname(filename), group, name + extensions.front());
+    return path_join(path_dirname(filename), group,
+        string{name} + string{extensions.front()});
   };
 
   // load shapes
@@ -761,26 +659,26 @@ static bool load_json_scene(const string& filename, scene_model* scene,
 }
 
 // Save a scene in the builtin JSON format.
-static bool save_json_scene(const string& filename, const scene_model* scene,
+static bool save_json_scene(string_view filename, const scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel) {
   auto dependent_error = [filename, &error]() {
-    error = filename + ": error in " + error;
+    error = format_file_error(filename, ": error in " + error);
     return false;
   };
 
   // helper
-  auto add_opt = [](json& ejs, const string& name, const auto& value,
+  auto add_opt = [](json& ejs, string_view name, const auto& value,
                      const auto& def) {
     if (value == def) return;
-    ejs[name] = value;
+    ejs[string{name}] = value;
   };
-  auto add_tex = [](json& ejs, const string& name, scene_texture* texture) {
+  auto add_tex = [](json& ejs, string_view name, scene_texture* texture) {
     if (!texture) return;
-    ejs[name] = texture->name;
+    ejs[string{name}] = texture->name;
   };
-  auto add_ref = [](json& ejs, const string& name, auto ref) {
+  auto add_ref = [](json& ejs, string_view name, auto ref) {
     if (!ref) return;
-    ejs[name] = ref->name;
+    ejs[string{name}] = ref->name;
   };
 
   // handle progress
@@ -795,7 +693,7 @@ static bool save_json_scene(const string& filename, const scene_model* scene,
   {
     auto& ejs        = js["asset"];
     ejs["generator"] = "Yocto/GL - https://github.com/xelatihy/yocto-gl";
-    add_opt(ejs, "copyright", scene->copyright, ""s);
+    add_opt(ejs, "copyright", scene->copyright, string{});
   }
 
   auto def_cam = scene_camera{};
@@ -881,9 +779,10 @@ static bool save_json_scene(const string& filename, const scene_model* scene,
   if (!save_json(filename, js, error)) return false;
 
   // get filename from name
-  auto make_filename = [filename](const string& name, const string& group,
-                           const string& extension) {
-    return path_join(path_dirname(filename), group, name + extension);
+  auto make_filename = [filename](string_view name, string_view group,
+                           string_view extension) {
+    return path_join(
+        path_dirname(filename), group, string{name} + string{extension});
   };
 
   // save shapes
@@ -927,14 +826,14 @@ static bool save_json_scene(const string& filename, const scene_model* scene,
 namespace yocto {
 
 // Loads an OBJ
-static bool load_obj_scene(const string& filename, scene_model* scene,
+static bool load_obj_scene(string_view filename, scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel) {
   auto shape_error = [filename, &error]() {
-    error = filename + ": empty shape";
+    error = format_file_error(filename, "empty shape");
     return false;
   };
   auto dependent_error = [filename, &error]() {
-    error = filename + ": error in " + error;
+    error = format_file_error(filename, ": error in " + error);
     return false;
   };
 
@@ -1074,7 +973,7 @@ static bool load_obj_scene(const string& filename, scene_model* scene,
   progress.y += (int)scene->textures.size();
 
   // get filename from name
-  auto make_filename = [filename](const string& name) {
+  auto make_filename = [filename](string_view name) {
     return path_join(path_dirname(filename), name);
   };
 
@@ -1107,14 +1006,14 @@ static bool load_obj_scene(const string& filename, scene_model* scene,
   return true;
 }
 
-static bool save_obj_scene(const string& filename, const scene_model* scene,
+static bool save_obj_scene(string_view filename, const scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel) {
   auto shape_error = [filename, &error]() {
-    error = filename + ": empty shape";
+    error = format_file_error(filename, "empty shape");
     return false;
   };
   auto dependent_error = [filename, &error]() {
-    error = filename + ": error in " + error;
+    error = format_file_error(filename, ": error in " + error);
     return false;
   };
 
@@ -1218,9 +1117,10 @@ static bool save_obj_scene(const string& filename, const scene_model* scene,
   if (!save_obj(filename, obj, error)) return false;
 
   // get filename from name
-  auto make_filename = [filename](const string& name, const string& group,
-                           const string& extension) {
-    return path_join(path_dirname(filename), group, name + extension);
+  auto make_filename = [filename](string_view name, string_view group,
+                           string_view extension) {
+    return path_join(
+        path_dirname(filename), group, string{name} + string{extension});
   };
 
   // save textures
@@ -1260,7 +1160,7 @@ void print_obj_camera(scene_camera* camera) {
 // -----------------------------------------------------------------------------
 namespace yocto {
 
-static bool load_ply_scene(const string& filename, scene_model* scene,
+static bool load_ply_scene(string_view filename, scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel) {
   // handle progress
   auto progress = vec2i{0, 1};
@@ -1288,10 +1188,12 @@ static bool load_ply_scene(const string& filename, scene_model* scene,
   return true;
 }
 
-static bool save_ply_scene(const string& filename, const scene_model* scene,
+static bool save_ply_scene(string_view filename, const scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel) {
-  if (scene->shapes.empty())
-    throw std::runtime_error{filename + ": empty shape"};
+  if (scene->shapes.empty()) {
+    error = format_file_error(filename, "empty shape");
+    return false;
+  }
 
   // handle progress
   auto progress = vec2i{0, 1};
@@ -1318,18 +1220,18 @@ static bool save_ply_scene(const string& filename, const scene_model* scene,
 namespace yocto {
 
 // Load a scene
-static bool load_gltf_scene(const string& filename, scene_model* scene,
+static bool load_gltf_scene(string_view filename, scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel) {
   auto read_error = [filename, &error]() {
-    error = filename + ": read error";
+    error = format_file_error(filename, "read error");
     return false;
   };
   auto primitive_error = [filename, &error]() {
-    error = filename + ": primitive error";
+    error = format_file_error(filename, "primitive error");
     return false;
   };
   auto dependent_error = [filename, &error]() {
-    error = filename + ": error in " + error;
+    error = format_file_error(filename, ": error in " + error);
     return false;
   };
 
@@ -1341,7 +1243,7 @@ static bool load_gltf_scene(const string& filename, scene_model* scene,
   auto params = cgltf_options{};
   memset(&params, 0, sizeof(params));
   auto data   = (cgltf_data*)nullptr;
-  auto result = cgltf_parse_file(&params, filename.c_str(), &data);
+  auto result = cgltf_parse_file(&params, string{filename}.c_str(), &data);
   if (result != cgltf_result_success) return read_error();
   auto gltf = std::unique_ptr<cgltf_data, void (*)(cgltf_data*)>{
       data, cgltf_free};
@@ -1804,10 +1706,10 @@ static bool load_gltf_scene(const string& filename, scene_model* scene,
 namespace yocto {
 
 // load pbrt scenes
-static bool load_pbrt_scene(const string& filename, scene_model* scene,
+static bool load_pbrt_scene(string_view filename, scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel) {
   auto dependent_error = [filename, &error]() {
-    error = filename + ": error in " + error;
+    error = format_file_error(filename, "error in " + error);
     return false;
   };
 
@@ -1836,32 +1738,32 @@ static bool load_pbrt_scene(const string& filename, scene_model* scene,
   // convert materials
   auto ctexture_map = unordered_map<string, scene_texture*>{{"", nullptr}};
   auto get_ctexture = [&scene, &ctexture_map](
-                          const string& path) -> scene_texture* {
+                          string_view path) -> scene_texture* {
     if (path == "") return nullptr;
-    auto it = ctexture_map.find(path);
+    auto it = ctexture_map.find(string{path});
     if (it != ctexture_map.end()) return it->second;
-    auto texture       = add_texture(scene);
-    ctexture_map[path] = texture;
+    auto texture               = add_texture(scene);
+    ctexture_map[string{path}] = texture;
     return texture;
   };
   auto stexture_map = unordered_map<string, scene_texture*>{{"", nullptr}};
   auto get_stexture = [&scene, &stexture_map](
-                          const string& path) -> scene_texture* {
+                          string_view path) -> scene_texture* {
     if (path == "") return nullptr;
-    auto it = stexture_map.find(path);
+    auto it = stexture_map.find(string{path});
     if (it != stexture_map.end()) return it->second;
-    auto texture       = add_texture(scene);
-    stexture_map[path] = texture;
+    auto texture               = add_texture(scene);
+    stexture_map[string{path}] = texture;
     return texture;
   };
   auto atexture_map = unordered_map<string, scene_texture*>{{"", nullptr}};
   auto get_atexture = [&scene, &atexture_map](
-                          const string& path) -> scene_texture* {
+                          string_view path) -> scene_texture* {
     if (path == "") return nullptr;
-    auto it = atexture_map.find(path);
+    auto it = atexture_map.find(string{path});
     if (it != atexture_map.end()) return it->second;
-    auto texture       = add_texture(scene);
-    atexture_map[path] = texture;
+    auto texture               = add_texture(scene);
+    atexture_map[string{path}] = texture;
     return texture;
   };
 
@@ -1936,7 +1838,7 @@ static bool load_pbrt_scene(const string& filename, scene_model* scene,
   progress.y += (int)scene->textures.size();
 
   // get filename from name
-  auto make_filename = [filename](const string& name) {
+  auto make_filename = [filename](string_view name) {
     return path_join(path_dirname(filename), name);
   };
 
@@ -1981,10 +1883,10 @@ static bool load_pbrt_scene(const string& filename, scene_model* scene,
 }
 
 // Save a pbrt scene
-static bool save_pbrt_scene(const string& filename, const scene_model* scene,
+static bool save_pbrt_scene(string_view filename, const scene_model* scene,
     string& error, progress_callback progress_cb, bool noparallel) {
   auto dependent_error = [filename, &error]() {
-    error = filename + ": error in " + error;
+    error = format_file_error(filename, "error in " + error);
     return false;
   };
 
@@ -2053,9 +1955,10 @@ static bool save_pbrt_scene(const string& filename, const scene_model* scene,
   progress.y += (int)scene->shapes.size() + (int)scene->textures.size();
 
   // get filename from name
-  auto make_filename = [filename](const string& name, const string& group,
-                           const string& extension) {
-    return path_join(path_dirname(filename), group, name + extension);
+  auto make_filename = [filename](string_view name, string_view group,
+                           string_view extension) {
+    return path_join(
+        path_dirname(filename), group, string{name} + string{extension});
   };
 
   // save textures

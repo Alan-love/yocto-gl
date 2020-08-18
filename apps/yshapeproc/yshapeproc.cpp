@@ -31,14 +31,12 @@
 #include <yocto/yocto_shape.h>
 using namespace yocto;
 
-using namespace std::string_literals;
-
 // Shape presets used ofr testing.
 bool make_shape_preset(vector<int>& points, vector<vec2i>& lines,
     vector<vec3i>& triangles, vector<vec4i>& quads, vector<vec4i>& quadspos,
     vector<vec4i>& quadsnorm, vector<vec4i>& quadstexcoord,
     vector<vec3f>& positions, vector<vec3f>& normals, vector<vec2f>& texcoords,
-    vector<vec3f>& colors, vector<float>& radius, const string& type,
+    vector<vec3f>& colors, vector<float>& radius, string_view type,
     string& error) {
   auto set_quads = [&](quads_shape&& shape) {
     quads     = shape.quads;
@@ -219,8 +217,7 @@ bool make_shape_preset(vector<int>& points, vector<vec2i>& lines,
 }
 
 // Shape presets used ofr testing.
-bool make_shape_preset(
-    generic_shape& shape, const string& type, string& error) {
+bool make_shape_preset(generic_shape& shape, string_view type, string& error) {
   return make_shape_preset(shape.points, shape.lines, shape.triangles,
       shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
       shape.positions, shape.normals, shape.texcoords, shape.colors,
@@ -234,13 +231,13 @@ int main(int argc, const char* argv[]) {
   auto trianglesonly = false;
   auto smooth        = false;
   auto faceted       = false;
-  auto rotate        = zero3f;
+  auto rotate        = vec3f{0, 0, 0};
   auto scale         = vec3f{1, 1, 1};
   auto uscale        = 1.0f;
-  auto translate     = zero3f;
+  auto translate     = vec3f{0, 0, 0};
   auto info          = false;
-  auto output        = "out.ply"s;
-  auto filename      = "mesh.ply"s;
+  auto output        = string{"out.ply"};
+  auto filename      = string{"mesh.ply"};
 
   // parse command line
   auto cli = make_cli("ymshproc", "Applies operations on a triangle mesh");
@@ -268,7 +265,7 @@ int main(int argc, const char* argv[]) {
   auto shape = generic_shape{};
 
   // load mesh
-  auto ioerror = ""s;
+  auto ioerror = string{};
   print_progress("load shape", 0, 1);
   if (path_filename(filename) == ".ypreset") {
     if (!make_shape_preset(shape, path_basename(filename), ioerror))

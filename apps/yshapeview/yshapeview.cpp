@@ -98,7 +98,7 @@ struct app_states {
 };
 
 void load_shape_async(
-    app_states* apps, const string& filename, const string& camera_name = "") {
+    app_states* apps, string_view filename, string_view camera_name = "") {
   auto app         = apps->states.emplace_back(new app_state{});
   app->filename    = filename;
   app->imagename   = replace_extension(filename, ".png");
@@ -107,7 +107,7 @@ void load_shape_async(
   app->drawgl_prms = apps->drawgl_prms;
   app->status      = "load";
   app->loader      = std::async(std::launch::async, [app, camera_name]() {
-    auto progress_cb = [app](const string& message, int current, int total) {
+    auto progress_cb = [app](string_view message, int current, int total) {
       app->current = current;
       app->total   = total;
     };
@@ -226,7 +226,8 @@ void init_glscene(ogl_scene* glscene, const generic_shape* ioshape,
 
 // draw with shading
 void draw_widgets(gui_window* win, app_states* apps, const gui_input& input) {
-  static auto load_path = ""s, save_path = ""s, error_message = ""s;
+  static auto load_path = string{}, save_path = string{},
+              error_message = string{};
   if (draw_filedialog_button(win, "load", true, "load", load_path, false, "./",
           "", "*.ply;*.obj")) {
     load_shape_async(apps, load_path);
@@ -339,7 +340,7 @@ void update(gui_window* win, app_states* apps) {
     auto app = apps->loading.front();
     if (!is_ready(app->loader)) break;
     apps->loading.pop_front();
-    auto progress_cb = [app](const string& message, int current, int total) {
+    auto progress_cb = [app](string_view message, int current, int total) {
       app->current = current;
       app->total   = total;
     };
@@ -361,7 +362,7 @@ int main(int argc, const char* argv[]) {
   auto apps_guard  = std::make_unique<app_states>();
   auto apps        = apps_guard.get();
   auto filenames   = vector<string>{};
-  auto camera_name = ""s;
+  auto camera_name = string{};
 
   // parse command line
   auto cli = make_cli("yshapeview", "views shapes inteactively");

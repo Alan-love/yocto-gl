@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 
+#include "yocto_commonio.h"
 #include "yocto_geometry.h"
 #include "yocto_modelio.h"
 #include "yocto_noise.h"
@@ -27,7 +28,6 @@ namespace yocto {
 // using directives
 using std::atomic;
 using std::deque;
-using namespace std::string_literals;
 
 }  // namespace yocto
 
@@ -3498,42 +3498,8 @@ void make_heightfield(vector<vec4i>& quads, vector<vec3f>& positions,
 // -----------------------------------------------------------------------------
 namespace yocto {
 
-// Get extension (not including '.').
-static string path_extension(const string& filename) {
-  auto pos = filename.rfind('.');
-  if (pos == string::npos) return "";
-  return filename.substr(pos);
-}
-
-// Opens a file with a utf8 file name
-static FILE* fopen_utf8(const char* filename, const char* mode) {
-#ifdef _Win32
-  auto path8 = std::filesystem::u8path(filename);
-  auto wmode = std::wstring(string{mode}.begin(), string{mode}.end());
-  return _wfopen(path.c_str(), wmode.c_str());
-#else
-  return fopen(filename, mode);
-#endif
-}
-
-// Save a text file
-static bool save_text(
-    const string& filename, const string& str, string& error) {
-  auto fs = fopen_utf8(filename.c_str(), "wt");
-  if (!fs) {
-    error = filename + ": file not found";
-    return false;
-  }
-  auto fs_guard = std::unique_ptr<FILE, decltype(&fclose)>{fs, fclose};
-  if (fprintf(fs, "%s", str.c_str()) < 0) {
-    error = filename + ": write error";
-    return false;
-  }
-  return true;
-}
-
 // Load ply mesh
-[[nodiscard]] bool load_shape(const string& filename, vector<int>& points,
+[[nodiscard]] bool load_shape(string_view filename, vector<int>& points,
     vector<vec2i>& lines, vector<vec3i>& triangles, vector<vec4i>& quads,
     vector<vec4i>& quadspos, vector<vec4i>& quadsnorm,
     vector<vec4i>& quadstexcoord, vector<vec3f>& positions,
@@ -3541,11 +3507,11 @@ static bool save_text(
     vector<float>& radius, string& error, bool facevarying,
     bool flip_texcoord) {
   auto format_error = [filename, &error]() {
-    error = filename + ": unknown format";
+    error = format_file_error(filename, "unknown format");
     return false;
   };
   auto shape_error = [filename, &error]() {
-    error = filename + ": empty shape";
+    error = format_file_error(filename, "empty shape");
     return false;
   };
 
@@ -3645,7 +3611,7 @@ static bool save_text(
 }
 
 // Save ply mesh
-[[nodiscard]] bool save_shape(const string& filename, const vector<int>& points,
+[[nodiscard]] bool save_shape(string_view filename, const vector<int>& points,
     const vector<vec2i>& lines, const vector<vec3i>& triangles,
     const vector<vec4i>& quads, const vector<vec4i>& quadspos,
     const vector<vec4i>& quadsnorm, const vector<vec4i>& quadstexcoord,
@@ -3654,11 +3620,11 @@ static bool save_text(
     const vector<float>& radius, string& error, bool facevarying,
     bool flip_texcoord, bool ascii) {
   auto format_error = [filename, &error]() {
-    error = filename + ": unknown format";
+    error = format_file_error(filename, "unknown format");
     return false;
   };
   auto shape_error = [filename, &error]() {
-    error = filename + ": empty shape";
+    error = format_file_error(filename, "empty shape");
     return false;
   };
 
@@ -3710,16 +3676,16 @@ static bool save_text(
     } else {
       return shape_error();
     }
-    auto err = ""s;
+    auto err = string{};
     if (!save_obj(filename, obj, error)) return false;
     return true;
   } else if (ext == ".cpp" || ext == ".CPP") {
-    auto to_cpp = [](const string& name, const string& vname,
+    auto to_cpp = [](string_view name, string_view vname,
                       const auto& values) -> string {
       using T = typename std::remove_const_t<
           std::remove_reference_t<decltype(values)>>::value_type;
-      if (values.empty()) return ""s;
-      auto str = "auto " + name + "_" + vname + " = ";
+      if (values.empty()) return string{};
+      auto str = "auto " + string{name} + "_" + string{vname} + " = ";
       if constexpr (std::is_same_v<int, T>) str += "vector<int>{\n";
       if constexpr (std::is_same_v<float, T>) str += "vector<float>{\n";
       if constexpr (std::is_same_v<vec2i, T>) str += "vector<vec2i>{\n";
@@ -3753,7 +3719,7 @@ static bool save_text(
     };
 
     auto name = string{"shape"};
-    auto str  = ""s;
+    auto str  = string{};
     str += to_cpp(name, "positions", positions);
     str += to_cpp(name, "normals", normals);
     str += to_cpp(name, "texcoords", texcoords);
@@ -3773,16 +3739,15 @@ static bool save_text(
 }
 
 // Load/save a shape as indexed meshes
-[[nodiscard]] bool load_shape(const string& filename, generic_shape& shape,
+[[nodiscard]] bool load_shape(string_view filename, generic_shape& shape,
     string& error, bool facevarying, bool flip_texcoords) {
   return load_shape(filename, shape.points, shape.lines, shape.triangles,
       shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
       shape.positions, shape.normals, shape.texcoords, shape.colors,
       shape.radius, error, facevarying, flip_texcoords);
 }
-[[nodiscard]] bool save_shape(const string& filename,
-    const generic_shape& shape, string& error, bool facevarying,
-    bool flip_texcoords, bool ascii) {
+[[nodiscard]] bool save_shape(string_view filename, const generic_shape& shape,
+    string& error, bool facevarying, bool flip_texcoords, bool ascii) {
   return save_shape(filename, shape.points, shape.lines, shape.triangles,
       shape.quads, shape.quadspos, shape.quadsnorm, shape.quadstexcoord,
       shape.positions, shape.normals, shape.texcoords, shape.colors,
